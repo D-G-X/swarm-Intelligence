@@ -17,12 +17,19 @@ public class Canvas extends JPanel {
     double[] currentTarget;
     boolean isConsuming;
 
-    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles) {
+    private int world_margin;
+    private int world_border_thickness;
+
+    double[] canvas_dimensions = new double[2];
+
+    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, int width, int height) {
         this.allVehicles = allVehicles;
         this.pix = pix;
         this.allObstacles = obstacles;
-        this.setBackground(Color.WHITE);
-        setSize(800, 800);
+        this.setBackground(Color.lightGray);
+        this.canvas_dimensions[0] = width;
+        this.canvas_dimensions[1] = height;
+        setSize(1000, 1000);
     }
 
     // Method to update target data from the Simulation loop
@@ -53,15 +60,17 @@ public class Canvas extends JPanel {
 
     public Polygon kfzInPolygonObs(Obstacle obs) {
         Polygon q = new Polygon();
-        int halfW = (int)((obs.getObstacle_width() / 2) / pix);
-        int halfH = (int)((obs.getObstacle_height() / 2) / pix);
+        int w = (int)(obs.getObstacle_width() / pix);
+        int h = (int)(obs.getObstacle_height() / pix);
         int x = (int)(obs.position[0] / pix);
         int y = (int)(obs.position[1] / pix);
 
-        q.addPoint(x + halfW, y + halfH);
-        q.addPoint(x - halfW, y + halfH);
-        q.addPoint(x - halfW, y - halfH);
-        q.addPoint(x + halfW, y - halfH);
+        // Define the corners sequentially starting from the top-left (x, y)
+        q.addPoint(x, y);         // 1. Top-Left: (0, 0)
+        q.addPoint(x, y + h);     // 2. Bottom-Left: (0, 0 + height)
+        q.addPoint(x + w, y + h); // 3. Bottom-Right: (0 + width, 0 + height)
+        q.addPoint(x + w, y);     // 4. Top-Right: (0 + width, 0)
+
         return q;
     }
 
@@ -70,18 +79,43 @@ public class Canvas extends JPanel {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // 1. Paint Target
+        // 1. Draw the World Border (Matches vehicle physical boundaries)
+        int minPixelX = (int)(world_margin / pix);
+        int minPixelY = (int)(world_margin / pix);
+        int maxPixelX = (int)(canvas_dimensions[0] * Simulation.pix / pix);
+        int maxPixelY = (int)(canvas_dimensions[1] * Simulation.pix / pix);
+
+        int borderWidth = maxPixelX - minPixelX;
+        int borderHeight = maxPixelY - minPixelY;
+
+        // Choose how round you want the outer arena to look (e.g., 30 pixels)
+        double worldCornerRounding = 30.0;
+
+        // Create a rounded rectangle for the global boundary area
+        java.awt.geom.RoundRectangle2D roundedWorld = new java.awt.geom.RoundRectangle2D.Double(
+                minPixelX, minPixelY, borderWidth, borderHeight, worldCornerRounding, worldCornerRounding
+        );
+
+        // Draw a soft light-gray filled background inside the active simulation zone
+        g2d.setColor(new Color(245, 245, 245));
+        g2d.fill(roundedWorld);
+
+        // Draw the thick dark frame line
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.setStroke(new java.awt.BasicStroke(world_border_thickness));
+        g2d.draw(roundedWorld);
+
+        // 2. Paint Target
         if (currentTarget != null) {
             int tx = (int)(currentTarget[0] / pix);
             int ty = (int)(currentTarget[1] / pix);
             int size = 10;
 
-            // Set color based on whether the swarm has "found" it
             g2d.setColor(isConsuming ? Color.GREEN : Color.RED);
             g2d.fillOval(tx - size / 2, ty - size / 2, size, size);
         }
 
-        // 2. Paint Vehicles
+        // 3. Paint Vehicles
         for (Vehicle fz : allVehicles) {
             Polygon q = kfzInPolygon(fz);
             g2d.setColor(Color.BLACK);
@@ -95,13 +129,39 @@ public class Canvas extends JPanel {
             }
         }
 
-        // 3. Paint Obstacles
+        // 4. Paint Obstacles
         for (Obstacle obs : allObstacles) {
-            Polygon q = kfzInPolygonObs(obs);
-            g2d.setColor(Color.GRAY);
-            g2d.fill(q);
-            g2d.setColor(Color.BLACK);
-            g2d.draw(q);
+            // Scale everything to pixel positions
+            double x = obs.position[0] / pix;
+            double y = obs.position[1] / pix;
+            double w = obs.getObstacle_width() / pix;
+            double h = obs.getObstacle_height() / pix;
+
+            double cornerRounding = 15.0;
+
+            java.awt.geom.RoundRectangle2D roundedBox = new java.awt.geom.RoundRectangle2D.Double(
+                    x, y, w, h, cornerRounding, cornerRounding
+            );
+
+            g2d.setColor(new Color(255, 236, 153));
+            g2d.fill(roundedBox);
+            g2d.draw(roundedBox);
         }
+    }
+
+    public int getWorld_border_thickness() {
+        return world_border_thickness;
+    }
+
+    public void setWorld_border_thickness(int world_border_thickness) {
+        this.world_border_thickness = world_border_thickness;
+    }
+
+    public int getWorld_margin() {
+        return world_margin;
+    }
+
+    public void setWorld_margin(int world_margin) {
+        this.world_margin = world_margin;
     }
 }
