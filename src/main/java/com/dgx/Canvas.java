@@ -19,6 +19,7 @@ public class Canvas extends JPanel {
     boolean showObstacleRadius;
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
+    boolean showType1Circle;
 
     private int world_margin;
     private int world_border_thickness;
@@ -48,6 +49,10 @@ public class Canvas extends JPanel {
 
     public void setShowTargetDetectionRadius(boolean showTargetDetectionRadius) {
         this.showTargetDetectionRadius = showTargetDetectionRadius;
+    }
+
+    public void setShowType1Circle(boolean showType1Circle) {
+        this.showType1Circle = showType1Circle;
     }
 
     public Polygon kfzInPolygon(Vehicle fz) {
@@ -170,7 +175,7 @@ public class Canvas extends JPanel {
             g2d.setColor(Color.BLACK);
             g2d.draw(q);
 
-            if (fz.type == 1) {
+            if (fz.type == 1 && showType1Circle) {
                 int seite = (int)(fz.rad_zus / pix);
                 g2d.drawOval((int)(fz.pos[0] / pix) - seite, (int)(fz.pos[1] / pix) - seite, 2 * seite, 2 * seite);
                 seite = (int)(fz.rad_sep / pix);
