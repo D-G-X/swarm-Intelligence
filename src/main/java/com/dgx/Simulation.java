@@ -319,14 +319,16 @@ public class Simulation extends JFrame {
                 isDispersing = false;
             }
 
+            double nearestDistance = Double.MAX_VALUE;
             for (Vehicle v : allVehicles) {
                 double d = Math.sqrt(Math.pow(v.pos[0] - currentTarget[0], 2) +
                         Math.pow(v.pos[1] - currentTarget[1], 2));
-                if (d < targetDetectionRadius) {
-                    isConsuming = true;
-                    consumptionStartTime = System.currentTimeMillis();
-                    break;
-                }
+                if (d < nearestDistance) nearestDistance = d;
+            }
+
+            if (nearestDistance < targetDetectionRadius) {
+                isConsuming = true;
+                consumptionStartTime = System.currentTimeMillis();
             }
         } else {
             if (System.currentTimeMillis() - consumptionStartTime > 3000) {
