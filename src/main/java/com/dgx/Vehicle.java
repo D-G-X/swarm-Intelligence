@@ -5,11 +5,11 @@ import java.util.ArrayList;
 public class Vehicle {
 	static int allId = 0;
 	// Tunable avoidance constants (adjustable at runtime via UI)
-	public static double BASE_AVOIDANCE_RADIUS = 19.0; // world units
-	public static double AVOIDANCE_MULTIPLIER = 4.0;   // intensity scaling
-	public static double OBS_WEIGHT = 0.25;            // weight used when combining forces
-	public static double F_ZUS_WEIGHT = 0.05;
-	public static double F_SEP_WEIGHT = 0.55;
+	public static double BASE_AVOIDANCE_RADIUS = 8.0; // world units
+	public static double AVOIDANCE_MULTIPLIER = 1.2;   // intensity scaling
+	public static double OBS_WEIGHT = 1.0;            // weight used when combining forces
+	public static double F_ZUS_WEIGHT = 0.6;
+	public static double F_SEP_WEIGHT = 1.2;
 	public static double F_AUS_WEIGHT = 0.4;
 	int id; 
 	double rad_sep; 
@@ -184,7 +184,7 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
         double[] acc_dest;
-        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment[cite: 1]
+        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment
 		double f_zus = F_ZUS_WEIGHT;
 		double f_sep = F_SEP_WEIGHT;
 		double f_aus = F_AUS_WEIGHT;
@@ -211,10 +211,10 @@ public class Vehicle {
     public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
         // 1. Define all weights
 		double f_zus = F_ZUS_WEIGHT;
-		double f_sep = F_SEP_WEIGHT;
+		double f_sep = isConsuming ? 0.0 : F_SEP_WEIGHT;;
 		double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT; // Keep obstacle avoidance strong while consuming
 		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
-        double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
+		double f_target = isConsuming ? 1.2 : 0.00; // small pre-detection pull, stronger while consuming
 
         // 2. Calculate individual force vectors
         double[] acc_cohesion = cohesion(allVehicles);
@@ -236,7 +236,7 @@ public class Vehicle {
                 (f_obs * acc_obs[1]) +
                 (f_target * acc_seek[1]);
 
-        // 4. Create the final acceleration vector and limit it to max_acc[cite: 1, 2]
+        // 4. Create the final acceleration vector and limit it to max_acc
         double[] acc_dest = new double[]{x, y};
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
@@ -297,7 +297,7 @@ public class Vehicle {
             }
         }
 
-        // Ensure we don't exceed max_vel, but allow coming to a stop[cite: 1, 2]
+        // Ensure we don't exceed max_vel, but allow coming to a stop
         double currentSpeed = VectorCalculation.length(vel);
         if (currentSpeed > max_vel) {
             vel = VectorCalculation.normalize(vel);
@@ -398,7 +398,7 @@ public class Vehicle {
 		}
 
         //   If the position is close to the right-edge then velocity is set to negative to move back to the left edge
-		if (pos[0] > 1000 * Simulation.pix) {
+		if (pos[0] > Simulation.WIDTH * Simulation.pix) {
 			vel[0] = -Math.abs(vel[0]);
 			pos[0] = pos[0] + vel[0];
 		}
@@ -410,7 +410,7 @@ public class Vehicle {
 		}
 
         //   If the position is close to the bottom-edge then
-		if (pos[1] > 700 * Simulation.pix) {
+		if (pos[1] > Simulation.HEIGHT * Simulation.pix) {
 			vel[1] = -Math.abs(vel[1]);
 			pos[1] = pos[1] + vel[1];
 		}

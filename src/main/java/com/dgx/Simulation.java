@@ -16,6 +16,8 @@ import java.awt.FlowLayout;
 
 public class Simulation extends JFrame {
 
+    static final double SPAWN_POINT_RADIUS = 40.0;
+
     int anzFz = 30; // number of cars (Anzahl Fahrzeuge)
     boolean isConsuming = false; // state when the vehicles are consuming the target
     boolean isDispersing = false; // state when the vehicles are done consuming the target
@@ -24,8 +26,8 @@ public class Simulation extends JFrame {
     double targetDetectionRadius = 15.0; // radius used to detect the target
 
     Canvas myCanvas; // The Canvas (die Leinwand)
-    final int WIDTH = 1475;
-    final int HEIGHT = 800;
+    static final int WIDTH = 1475;
+    static final int HEIGHT = 800;
     final int WORLD_MARGIN = 10;
     final int WORLD_BORDER_WIDTH = 2;
     static int sleep = 8; // delay in frame
@@ -42,16 +44,6 @@ public class Simulation extends JFrame {
         System.out.println("\"Die Schwarmintelligenz\"");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        System.out.println("Generating Vehicles");
-
-        for (int k = 0; k < anzFz; k++) {
-            Vehicle car = new Vehicle();
-            if (k < 5) car.type = 1; // type 1 has visible boundary
-            allVehicles.add(car);
-        }
-
-        System.out.println("Vehicles Generated");
 
         System.out.println("Extracting Obstacles Positions");
 
@@ -104,6 +96,17 @@ public class Simulation extends JFrame {
 
         System.out.println("\nObstacles Generated");
 
+        System.out.println("Generating Vehicles");
+
+        for (int k = 0; k < anzFz; k++) {
+            Vehicle car = new Vehicle();
+            car.type = 1; // type 1 has visible boundary
+            placeVehicleInSpawnCircle(car);
+            allVehicles.add(car);
+        }
+
+        System.out.println("Vehicles Generated");
+
         myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
 
         myCanvas.setWorld_margin(WORLD_MARGIN);
@@ -114,7 +117,11 @@ public class Simulation extends JFrame {
         add(myCanvas, BorderLayout.CENTER);
 
         // Control panel with compact tiles arranged in 2 rows x 5 columns
-        JPanel controlPanel = new JPanel(new GridLayout(2, 5, 8, 8));
+            JPanel controlPanel = new JPanel(new GridLayout(2, 5, 0, 4));
+            controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        controlPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Control Panel"),
+            BorderFactory.createEmptyBorder(8, 0, 10, 0)));
 
         java.util.function.BiFunction<JLabel, JSlider, JPanel> controlTile = (label, slider) -> {
             JPanel tile = new JPanel(new BorderLayout(4, 4));
@@ -226,7 +233,7 @@ public class Simulation extends JFrame {
         controlPanel.add(toggleTile);
 
         // 9) Toggle target detection radius visualization + show type1 circles
-        JCheckBox chkTargetRadius = new JCheckBox("Show target radius", false);
+        JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
             myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
             myCanvas.repaint();
@@ -238,7 +245,7 @@ public class Simulation extends JFrame {
             myCanvas.repaint();
         });
 
-        JPanel combinedToggleCenter = new JPanel(new GridLayout(2, 1, 4, 4));
+        JPanel combinedToggleCenter = new JPanel(new GridLayout(1, 2, 12, 4));
         combinedToggleCenter.add(chkTargetRadius);
         combinedToggleCenter.add(chkType1Circle);
 
@@ -246,6 +253,22 @@ public class Simulation extends JFrame {
         targetToggleTile.add(new JLabel("Toggle Target/Type1"), BorderLayout.NORTH);
         targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
         controlPanel.add(targetToggleTile);
+
+        // 10) Manual target regeneration button
+        JButton btnNewTarget = new JButton("New Target");
+        btnNewTarget.addActionListener(e -> {
+            isDispersing = false;
+            spawnNextTarget();
+            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
+            myCanvas.repaint();
+        });
+        JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
+        buttonTile.add(btnNewTarget, BorderLayout.CENTER);
+        controlPanel.add(buttonTile);
+
+        // initialize canvas toggles to match checkbox defaults
+        myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
+        myCanvas.setShowType1Circle(chkType1Circle.isSelected());
 
         // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
         while (controlPanel.getComponentCount() < 10) {
@@ -280,10 +303,10 @@ public class Simulation extends JFrame {
         int attempts = 0;
 
         // Define the same boundaries the vehicles use in position_Box()
-        double minX = 15; // Slightly inside the 10-unit left wall
-        double maxX = (1000 * pix) - 15;
-        double minY = 15; // Slightly inside the 10-unit top wall
-        double maxY = (700 * pix) - 15;
+        double minX = WORLD_MARGIN + 5;
+        double maxX = (WIDTH * pix) - (WORLD_MARGIN + 5);
+        double minY = WORLD_MARGIN + 5;
+        double maxY = (HEIGHT * pix) - (WORLD_MARGIN + 5);
 
         do {
             invalidLocation = false;
@@ -319,6 +342,49 @@ public class Simulation extends JFrame {
         System.out.println("New Target Position:\t"+currentTarget[0]+","+currentTarget[1]);
 
         isConsuming = false;
+    }
+
+    private void placeVehicleInSpawnCircle(Vehicle car) {
+        final double spawnRadius = SPAWN_POINT_RADIUS;
+        final double spawnCenterX = (WIDTH * pix) - WORLD_MARGIN - spawnRadius;
+        final double spawnCenterY = WORLD_MARGIN + spawnRadius;
+
+        boolean invalidLocation;
+        int attempts = 0;
+
+        do {
+            invalidLocation = false;
+            attempts++;
+
+            double angle = 2.0 * Math.PI * Math.random();
+            double distance = spawnRadius * Math.sqrt(Math.random());
+
+            car.pos[0] = spawnCenterX + Math.cos(angle) * distance;
+            car.pos[1] = spawnCenterY + Math.sin(angle) * distance;
+
+            for (Obstacle obs : allObstacles) {
+                double ox = obs.position[0];
+                double oy = obs.position[1];
+                double ow = obs.getObstacle_width();
+                double oh = obs.getObstacle_height();
+
+                boolean insideX = car.pos[0] >= ox && car.pos[0] <= (ox + ow);
+                boolean insideY = car.pos[1] >= oy && car.pos[1] <= (oy + oh);
+
+                if (insideX && insideY) {
+                    invalidLocation = true;
+                    break;
+                }
+            }
+
+            if (attempts > 100) {
+                break;
+            }
+        } while (invalidLocation);
+
+        double angle = 2.0 * Math.PI * Math.random();
+        car.vel[0] = Math.cos(angle) * car.max_vel;
+        car.vel[1] = Math.sin(angle) * car.max_vel;
     }
 
     void checkTargetStatus() {
