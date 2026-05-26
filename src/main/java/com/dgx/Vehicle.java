@@ -184,7 +184,7 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
         double[] acc_dest;
-        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment[cite: 1]
+        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment
 		double f_zus = F_ZUS_WEIGHT;
 		double f_sep = F_SEP_WEIGHT;
 		double f_aus = F_AUS_WEIGHT;
@@ -214,7 +214,7 @@ public class Vehicle {
 		double f_sep = F_SEP_WEIGHT;
 		double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT; // Keep obstacle avoidance strong while consuming
 		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
-        double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
+        double f_target = 0.3; // Much stronger pull to the center point if consuming
 
         // 2. Calculate individual force vectors
         double[] acc_cohesion = cohesion(allVehicles);
@@ -236,7 +236,7 @@ public class Vehicle {
                 (f_obs * acc_obs[1]) +
                 (f_target * acc_seek[1]);
 
-        // 4. Create the final acceleration vector and limit it to max_acc[cite: 1, 2]
+        // 4. Create the final acceleration vector and limit it to max_acc
         double[] acc_dest = new double[]{x, y};
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
@@ -297,7 +297,7 @@ public class Vehicle {
             }
         }
 
-        // Ensure we don't exceed max_vel, but allow coming to a stop[cite: 1, 2]
+        // Ensure we don't exceed max_vel, but allow coming to a stop
         double currentSpeed = VectorCalculation.length(vel);
         if (currentSpeed > max_vel) {
             vel = VectorCalculation.normalize(vel);
