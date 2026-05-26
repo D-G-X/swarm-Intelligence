@@ -213,7 +213,6 @@ public class Vehicle {
 		double f_zus = F_ZUS_WEIGHT;
 		double f_sep = F_SEP_WEIGHT;
 		double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT; // Keep obstacle avoidance strong while consuming
-//        double f_target = 0.3;
 		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
         double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
 
