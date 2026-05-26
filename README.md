@@ -25,12 +25,27 @@ SwarmSimulation is a Java Swing project that simulates a swarm of autonomous veh
 
 ## Runtime Controls
 
-The bottom control panel lets you tune obstacle avoidance live:
+The bottom control panel now uses a compact 2-row x 5-column layout so the controls stay readable while you tune the simulation live.
+
+### Obstacle / Debug Controls
 
 - **AvoidRadius**: changes the base sensing distance used for obstacle avoidance.
 - **AvoidMult**: changes how strongly vehicles push away when near obstacles.
 - **ObsWeight**: changes how much obstacle avoidance influences the final steering decision.
 - **Show obstacle radius**: toggles the dashed black radius visualization around each obstacle.
+
+### Swarm Weight Controls
+
+- **F_zus**: controls cohesion strength.
+- **F_sep**: controls separation strength.
+- **F_aus**: controls alignment strength.
+
+### Notes on the Sliders
+
+- All sliders update the simulation at runtime.
+- Higher values generally make the corresponding behavior stronger.
+- Lower values reduce that behavior's influence on the final vehicle motion.
+- The obstacle radius overlay uses the same avoidance radius concept as the steering logic.
 
 ## Project Structure
 
@@ -58,4 +73,4 @@ java -cp target/classes com.dgx.Simulation
 
 - The simulation uses `pix` as a world-to-screen scaling factor.
 - Targets are spawned within the active arena and rejected if they overlap an obstacle.
-- The dashed radius visualization uses the same avoidance radius concept as the steering logic.
+- The controls are arranged in two rows of five tiles to keep the panel compact.

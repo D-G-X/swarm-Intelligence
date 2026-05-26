@@ -8,6 +8,9 @@ public class Vehicle {
 	public static double BASE_AVOIDANCE_RADIUS = 30.0; // world units
 	public static double AVOIDANCE_MULTIPLIER = 4.0;   // intensity scaling
 	public static double OBS_WEIGHT = 0.8;            // weight used when combining forces
+	public static double F_ZUS_WEIGHT = 0.05;
+	public static double F_SEP_WEIGHT = 0.55;
+	public static double F_AUS_WEIGHT = 0.4;
 	int id; 
 	double rad_sep; 
 	double rad_zus; 
@@ -182,9 +185,9 @@ public class Vehicle {
     public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
         double[] acc_dest;
         double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment[cite: 1]
-        double f_zus = 0.05;
-        double f_sep = 0.55;
-        double f_aus = 0.4;
+		double f_zus = F_ZUS_WEIGHT;
+		double f_sep = F_SEP_WEIGHT;
+		double f_aus = F_AUS_WEIGHT;
 		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
         double f_target = 0.3;
 
@@ -207,11 +210,11 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
         // 1. Define all weights
-        double f_zus = 0.05;
-        double f_sep = 0.55;
+		double f_zus = F_ZUS_WEIGHT;
+		double f_sep = F_SEP_WEIGHT;
 		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
 //        double f_target = 0.3;
-        double f_aus = isConsuming ? 0.0 : 0.4; // Stop trying to "flow" together if eating
+		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
         double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
 
         // 2. Calculate individual force vectors
