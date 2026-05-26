@@ -4,6 +4,13 @@ import java.util.ArrayList;
 
 public class Vehicle {
 	static int allId = 0;
+	// Tunable avoidance constants (adjustable at runtime via UI)
+	public static double BASE_AVOIDANCE_RADIUS = 30.0; // world units
+	public static double AVOIDANCE_MULTIPLIER = 4.0;   // intensity scaling
+	public static double OBS_WEIGHT = 0.8;            // weight used when combining forces
+	public static double F_ZUS_WEIGHT = 0.05;
+	public static double F_SEP_WEIGHT = 0.55;
+	public static double F_AUS_WEIGHT = 0.4;
 	int id; 
 	double rad_sep; 
 	double rad_zus; 
@@ -178,10 +185,10 @@ public class Vehicle {
     public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
         double[] acc_dest;
         double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment[cite: 1]
-        double f_zus = 0.05;
-        double f_sep = 0.55;
-        double f_aus = 0.4;
-        double f_obs = 0.8; // High priority to avoid hitting boxes
+		double f_zus = F_ZUS_WEIGHT;
+		double f_sep = F_SEP_WEIGHT;
+		double f_aus = F_AUS_WEIGHT;
+		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
         double f_target = 0.3;
 
         double[] acc_cohesion = cohesion(allVehicles);
@@ -203,11 +210,11 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
         // 1. Define all weights
-        double f_zus = 0.05;
-        double f_sep = 0.55;
-        double f_obs = 0.8; // High priority to avoid hitting boxes
+		double f_zus = F_ZUS_WEIGHT;
+		double f_sep = F_SEP_WEIGHT;
+		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
 //        double f_target = 0.3;
-        double f_aus = isConsuming ? 0.0 : 0.4; // Stop trying to "flow" together if eating
+		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
         double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
 
         // 2. Calculate individual force vectors
@@ -313,32 +320,31 @@ public class Vehicle {
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
 
-    double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
-        double[] acc_total = new double[2];
-        // Increase the radius so the vehicle reacts sooner
-        double avoidanceRadius = 30.0;
+	double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
+		double[] acc_total = new double[2];
+		// base sensing radius (tunable)
+		double avoidanceRadius = BASE_AVOIDANCE_RADIUS;
 
-        for (Obstacle obs : obstacles) {
-            double dx = pos[0] - obs.position[0];
-            double dy = pos[1] - obs.position[1];
-            double dist = Math.sqrt(dx * dx + dy * dy);
+		for (Obstacle obs : obstacles) {
+			double dx = pos[0] - obs.position[0];
+			double dy = pos[1] - obs.position[1];
+			double dist = Math.sqrt(dx * dx + dy * dy);
 
-            // If the vehicle is inside or very close to the radius
-            if (dist < avoidanceRadius) {
-                double[] pushAway = new double[]{dx, dy};
+			// If the vehicle is inside or very close to the radius
+			if (dist < avoidanceRadius) {
+				double[] pushAway = new double[]{dx, dy};
 
-                if (VectorCalculation.length(pushAway) > 1e-8) {
-                    pushAway = VectorCalculation.normalize(pushAway);
-                }
+				if (VectorCalculation.length(pushAway) > 1e-8) {
+					pushAway = VectorCalculation.normalize(pushAway);
+				}
 
-                // Exponential force: (Radius / Distance)^2 creates a massive push
-                // as the vehicle gets closer to the obstacle
-                double intensity = Math.pow((avoidanceRadius / Math.max(dist, 1.0)), 2);
+				// Exponential force scaled by tunable multiplier
+				double intensity = Math.pow((avoidanceRadius / Math.max(dist, 1.0)), 2) * AVOIDANCE_MULTIPLIER;
 
-                acc_total[0] += pushAway[0] * intensity;
-                acc_total[1] += pushAway[1] * intensity;
-            }
-        }
+				acc_total[0] += pushAway[0] * intensity;
+				acc_total[1] += pushAway[1] * intensity;
+			}
+		}
 
         // If there is an avoidance force, truncate it to max_acc
         if (VectorCalculation.length(acc_total) > 1e-8) {

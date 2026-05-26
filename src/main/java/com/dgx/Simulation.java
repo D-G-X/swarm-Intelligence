@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.awt.FlowLayout;
 
 public class Simulation extends JFrame {
 
@@ -19,11 +24,11 @@ public class Simulation extends JFrame {
 
     Canvas myCanvas; // The Canvas (die Leinwand)
     final int WIDTH = 1475;
-    final int HEIGHT = 925;
+    final int HEIGHT = 800;
     final int WORLD_MARGIN = 10;
     final int WORLD_BORDER_WIDTH = 2;
     static int sleep = 8; // delay in frame
-    static double pix = 0.3; // the scaling factor
+    static double pix = 0.4; // the scaling factor
     double[] currentTarget = null;
 
     int numObstacles = 0;// position of the current target
@@ -103,7 +108,115 @@ public class Simulation extends JFrame {
         myCanvas.setWorld_margin(WORLD_MARGIN);
         myCanvas.setWorld_border_thickness(WORLD_BORDER_WIDTH);
 
-        add(myCanvas);
+        // Layout: canvas center, controls at bottom
+        getContentPane().setLayout(new BorderLayout());
+        add(myCanvas, BorderLayout.CENTER);
+
+        // Control panel with compact tiles arranged in 2 rows x 5 columns
+        JPanel controlPanel = new JPanel(new GridLayout(2, 5, 8, 8));
+
+        java.util.function.BiFunction<JLabel, JSlider, JPanel> controlTile = (label, slider) -> {
+            JPanel tile = new JPanel(new BorderLayout(4, 4));
+            tile.add(label, BorderLayout.NORTH);
+            tile.add(slider, BorderLayout.CENTER);
+            return tile;
+        };
+
+        // 1) Base avoidance radius slider (0 - 200)
+        JLabel lblRadius = new JLabel("AvoidRadius: " + (int)Vehicle.BASE_AVOIDANCE_RADIUS);
+        JSlider sliderRadius = new JSlider(0, 200, (int)Math.round(Vehicle.BASE_AVOIDANCE_RADIUS));
+        sliderRadius.setMajorTickSpacing(50);
+        sliderRadius.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.BASE_AVOIDANCE_RADIUS = sliderRadius.getValue();
+                lblRadius.setText("AvoidRadius: " + sliderRadius.getValue());
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblRadius, sliderRadius));
+
+        // 2) Avoidance multiplier slider (0.0 - 10.0 mapped to 0 - 100)
+        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
+        JSlider sliderMult = new JSlider(0, 100, (int)Math.round(Vehicle.AVOIDANCE_MULTIPLIER * 10));
+        sliderMult.setMajorTickSpacing(25);
+        sliderMult.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.AVOIDANCE_MULTIPLIER = sliderMult.getValue() / 10.0;
+                lblMult.setText("AvoidMult: " + String.format("%.1f", Vehicle.AVOIDANCE_MULTIPLIER));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblMult, sliderMult));
+
+        // 3) Obstacle weight slider (0.0 - 2.0 mapped to 0 - 200)
+        JLabel lblWeight = new JLabel("ObsWeight: " + Vehicle.OBS_WEIGHT);
+        JSlider sliderWeight = new JSlider(0, 200, (int)Math.round(Vehicle.OBS_WEIGHT * 100));
+        sliderWeight.setMajorTickSpacing(50);
+        sliderWeight.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.OBS_WEIGHT = sliderWeight.getValue() / 100.0;
+                lblWeight.setText("ObsWeight: " + String.format("%.2f", Vehicle.OBS_WEIGHT));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblWeight, sliderWeight));
+
+        // 4) Cohesion weight slider (0.0 - 2.0 mapped to 0 - 200)
+        JLabel lblZus = new JLabel("F_zus: " + String.format("%.2f", Vehicle.F_ZUS_WEIGHT));
+        JSlider sliderZus = new JSlider(0, 200, (int)Math.round(Vehicle.F_ZUS_WEIGHT * 100));
+        sliderZus.setMajorTickSpacing(50);
+        sliderZus.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.F_ZUS_WEIGHT = sliderZus.getValue() / 100.0;
+                lblZus.setText("F_zus: " + String.format("%.2f", Vehicle.F_ZUS_WEIGHT));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblZus, sliderZus));
+
+        // 5) Separation weight slider (0.0 - 2.0 mapped to 0 - 200)
+        JLabel lblSep = new JLabel("F_sep: " + String.format("%.2f", Vehicle.F_SEP_WEIGHT));
+        JSlider sliderSep = new JSlider(0, 200, (int)Math.round(Vehicle.F_SEP_WEIGHT * 100));
+        sliderSep.setMajorTickSpacing(50);
+        sliderSep.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.F_SEP_WEIGHT = sliderSep.getValue() / 100.0;
+                lblSep.setText("F_sep: " + String.format("%.2f", Vehicle.F_SEP_WEIGHT));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblSep, sliderSep));
+
+        // 6) Alignment weight slider (0.0 - 2.0 mapped to 0 - 200)
+        JLabel lblAus = new JLabel("F_aus: " + String.format("%.2f", Vehicle.F_AUS_WEIGHT));
+        JSlider sliderAus = new JSlider(0, 200, (int)Math.round(Vehicle.F_AUS_WEIGHT * 100));
+        sliderAus.setMajorTickSpacing(50);
+        sliderAus.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.F_AUS_WEIGHT = sliderAus.getValue() / 100.0;
+                lblAus.setText("F_aus: " + String.format("%.2f", Vehicle.F_AUS_WEIGHT));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblAus, sliderAus));
+
+        // 4) Toggle obstacle avoidance radius visualization
+        JCheckBox chkRadius = new JCheckBox("Show obstacle radius", false);
+        chkRadius.addActionListener(e -> {
+            myCanvas.setShowObstacleRadius(chkRadius.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel toggleTile = new JPanel(new BorderLayout(4, 4));
+        toggleTile.add(new JLabel("Debug Toggle"), BorderLayout.NORTH);
+        toggleTile.add(chkRadius, BorderLayout.CENTER);
+        controlPanel.add(toggleTile);
+
+        // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
+        while (controlPanel.getComponentCount() < 10) {
+            controlPanel.add(new JPanel());
+        }
+
+        add(controlPanel, BorderLayout.SOUTH);
 
         setSize(WIDTH, HEIGHT);
 

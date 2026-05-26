@@ -16,6 +16,7 @@ public class Canvas extends JPanel {
     // New fields to track the target state
     double[] currentTarget;
     boolean isConsuming;
+    boolean showObstacleRadius;
 
     private int world_margin;
     private int world_border_thickness;
@@ -36,6 +37,10 @@ public class Canvas extends JPanel {
     public void updateTarget(double[] target, boolean consuming) {
         this.currentTarget = target;
         this.isConsuming = consuming;
+    }
+
+    public void setShowObstacleRadius(boolean showObstacleRadius) {
+        this.showObstacleRadius = showObstacleRadius;
     }
 
     public Polygon kfzInPolygon(Vehicle fz) {
@@ -159,6 +164,33 @@ public class Canvas extends JPanel {
             g2d.setColor(new Color(255, 236, 153));
             g2d.fill(roundedBox);
             g2d.draw(roundedBox);
+
+            if (showObstacleRadius) {
+                double centerX = x + (w / 2.0);
+                double centerY = y + (h / 2.0);
+                double radiusWorld = Vehicle.BASE_AVOIDANCE_RADIUS + Math.max(obs.getObstacle_width() / 2.0, obs.getObstacle_height() / 2.0);
+                double radiusPx = radiusWorld / pix;
+                double diameterPx = radiusPx * 2.0;
+
+                Graphics2D radiusGraphics = (Graphics2D) g2d.create();
+                float[] dashPattern = {8.0f, 8.0f};
+                radiusGraphics.setColor(Color.BLACK);
+                radiusGraphics.setStroke(new java.awt.BasicStroke(
+                        1.5f,
+                        java.awt.BasicStroke.CAP_BUTT,
+                        java.awt.BasicStroke.JOIN_MITER,
+                        10.0f,
+                        dashPattern,
+                        0.0f
+                ));
+                radiusGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+                        centerX - radiusPx,
+                        centerY - radiusPx,
+                        diameterPx,
+                        diameterPx
+                ));
+                radiusGraphics.dispose();
+            }
         }
     }
 
