@@ -273,9 +273,14 @@ public class Vehicle {
         double[] acc;
 
         if (isDispersing) {
-            // Move randomly: ignore target, high noise/random force
+			// Move randomly, but still avoid obstacles while dispersing
             double[] randomAcc = new double[]{(Math.random() - 0.5), (Math.random() - 0.5)};
-            acc = VectorCalculation.truncate(randomAcc, max_acc);
+			double[] avoidAcc = obstacleAvoidance(obs);
+			double[] disperseAcc = new double[]{
+					randomAcc[0] + (avoidAcc[0] * 1.5),
+					randomAcc[1] + (avoidAcc[1] * 1.5)
+			};
+			acc = VectorCalculation.truncate(disperseAcc, max_acc);
         } else {
             acc = calculateWeightedAcc(allVehicles, obs, target,  isConsuming);
         }
