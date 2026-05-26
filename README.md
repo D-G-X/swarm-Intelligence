@@ -33,6 +33,7 @@ The bottom control panel now uses a compact 2-row x 5-column layout so the contr
 - **AvoidMult**: changes how strongly vehicles push away when near obstacles.
 - **ObsWeight**: changes how much obstacle avoidance influences the final steering decision.
 - **Show obstacle radius**: toggles the dashed black radius visualization around each obstacle.
+- **Avoidance multiplier vs. obstacle weight**: the multiplier changes the strength of the repulsive push once an obstacle is sensed, while the obstacle weight controls how much that repulsive force counts compared with cohesion, separation, and alignment.
 
 ### Target / Detection Controls
 
