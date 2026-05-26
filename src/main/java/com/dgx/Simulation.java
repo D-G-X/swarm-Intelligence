@@ -18,7 +18,7 @@ public class Simulation extends JFrame {
 
     Canvas myCanvas; // The Canvas (die Leinwand)
     static int sleep = 8; // delay in frame
-    static double pix = 0.2; // the scaling factor
+    static double pix = 0.3; // the scaling factor
     double[] currentTarget = null;
 
     int numObstacles = 0;// position of the current target
@@ -66,7 +66,10 @@ public class Simulation extends JFrame {
                     obs_pos[0] = Integer.parseInt(parts[0]);
                     obs_pos[1] = Integer.parseInt(parts[1]);
 
-                    allObstacles.add(new Obstacle(obs_pos));
+                    double obs_width = Double.parseDouble(parts[2]);
+                    double obs_height = Double.parseDouble(parts[3]);
+
+                    allObstacles.add(new Obstacle(obs_pos, obs_width, obs_height));
                 }
 
                 reader.close();
@@ -84,11 +87,15 @@ public class Simulation extends JFrame {
 
         System.out.println("\nObstacles Generated");
 
-        myCanvas = new Canvas(allVehicles, pix, allObstacles);
+        int width = 1500;
+        int height = 1500;
+
+        myCanvas = new Canvas(allVehicles, pix, allObstacles, width, height);
 
         add(myCanvas);
 
-        setSize(1000, 800);
+        setSize(1500, 1000 );
+
         setVisible(true);
 
         spawnNextTarget();
@@ -143,8 +150,6 @@ public class Simulation extends JFrame {
 
         isConsuming = false;
     }
-
-
 
     void checkTargetStatus() {
         if (currentTarget == null) return;

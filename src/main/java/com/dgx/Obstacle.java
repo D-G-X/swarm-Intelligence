@@ -1,19 +1,23 @@
 package com.dgx;
 
 public class Obstacle {
-    private double obstacle_width = 20;
-    private double obstacle_height = 20;
+    private double obstacle_width;
+    private double obstacle_height;
 
     double[] position;
 
+    // constructor with obstacle positions, width and height
+    Obstacle(double[] position, double obstacle_width, double obstacle_height) {
+        this.position = position;
+        this.obstacle_width = obstacle_width;
+        this.obstacle_height = obstacle_height;
+    }
+
+    // constructor with only position of the obstacle and default width and height
     Obstacle(double[] position) {
         this.position = position;
-        if(position[0] < obstacle_width){
-            this.position[0] += 40;
-        }
-        if(position[1] < obstacle_width){
-            this.position[1] += 40;
-        }
+        this.obstacle_width = 40;
+        this.obstacle_height = 40;
     }
 
     public double getObstacle_width() {

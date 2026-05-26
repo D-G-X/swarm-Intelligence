@@ -313,7 +313,6 @@ public class Vehicle {
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
 
-
     double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
         double[] acc_total = new double[2];
         // Increase the radius so the vehicle reacts sooner
