@@ -5,9 +5,9 @@ import java.util.ArrayList;
 public class Vehicle {
 	static int allId = 0;
 	// Tunable avoidance constants (adjustable at runtime via UI)
-	public static double BASE_AVOIDANCE_RADIUS = 30.0; // world units
+	public static double BASE_AVOIDANCE_RADIUS = 19.0; // world units
 	public static double AVOIDANCE_MULTIPLIER = 4.0;   // intensity scaling
-	public static double OBS_WEIGHT = 0.8;            // weight used when combining forces
+	public static double OBS_WEIGHT = 0.25;            // weight used when combining forces
 	public static double F_ZUS_WEIGHT = 0.05;
 	public static double F_SEP_WEIGHT = 0.55;
 	public static double F_AUS_WEIGHT = 0.4;
