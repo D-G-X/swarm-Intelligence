@@ -9,5 +9,5 @@
 70 269 60 50 //bottom-left-1b
 10 223 60 50 //bottom-left-3
 469 269 60 50 //bottom-right-1a
-529 269 60 50 //bottom-right-1b
-529 220 60 50 //bottom-right-2
+528 269 62 50 //bottom-right-1b
+528 221 62 50 //bottom-right-2
