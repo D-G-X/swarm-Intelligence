@@ -11,15 +11,15 @@ import javax.swing.*;
 
 public class Simulation extends JFrame {
 
-    int anzFz = 10; // number of cars (Anzahl Fahrzeuge)
+    int anzFz = 5; // number of cars (Anzahl Fahrzeuge)
     boolean isConsuming = false; // state when the vehicles are consuming the target
     boolean isDispersing = false; // state when the vehicles are done consuming the target
     long consumptionStartTime = 0; // timer after when the vehicles start consume the target
     long dispersalStartTime = 0; // timer for the dispersion of the vehicle
 
     Canvas myCanvas; // The Canvas (die Leinwand)
-    final int WIDTH = 1500;
-    final int HEIGHT = 1500;
+    final int WIDTH = 1475;
+    final int HEIGHT = 925;
     static int sleep = 8; // delay in frame
     static double pix = 0.3; // the scaling factor
     double[] currentTarget = null;
@@ -54,25 +54,38 @@ public class Simulation extends JFrame {
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 
-                int numObstacles = Integer.parseInt(reader.readLine());
+                numObstacles = Integer.parseInt(reader.readLine());
 
                 System.out.println("Number of Obstacles: "+numObstacles);
 
                 for (int i = 0; i < numObstacles; i++) {
-
                     double[] obs_pos = new double[2];
                     String line = reader.readLine();
-
                     String[] parts = line.split(" ");
 
-                    obs_pos[0] = Integer.parseInt(parts[0]);
-                    obs_pos[1] = Integer.parseInt(parts[1]);
-
+                    // 1. Parse raw positions and dimensions from the file
+                    double parsedX = Integer.parseInt(parts[0]);
+                    double parsedY = Integer.parseInt(parts[1]);
                     double obs_width = Double.parseDouble(parts[2]);
                     double obs_height = Double.parseDouble(parts[3]);
 
+                    // 2. Define your new centered world boundary thresholds for 1500x1500px window
+                    double minX = 150;
+                    double maxX = 350 - obs_width;
+                    double minY = 150;
+                    double maxY = 350 - obs_height;
+
+                    // 3. Prevent any negative-space logic bugs
+                    if (maxX < minX) maxX = minX;
+                    if (maxY < minY) maxY = minY;
+
+                    // 4. Force the top-left anchor point inside the clean 1500px safe zone
+                    obs_pos[0] = Math.max(minX, Math.min(parsedX, maxX));
+                    obs_pos[1] = Math.max(minY, Math.min(parsedY, maxY));
+
                     allObstacles.add(new Obstacle(obs_pos, obs_width, obs_height));
                 }
+
 
                 reader.close();
 
@@ -83,7 +96,8 @@ public class Simulation extends JFrame {
             } else {
                 System.out.println("No text file for obstacles found!");
             }
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             ex.printStackTrace();
         }
 
@@ -93,7 +107,7 @@ public class Simulation extends JFrame {
 
         add(myCanvas);
 
-        setSize(WIDTH, HEIGHT );
+        setSize(WIDTH, HEIGHT);
 
         setVisible(true);
 

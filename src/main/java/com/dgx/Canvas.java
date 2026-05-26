@@ -57,56 +57,18 @@ public class Canvas extends JPanel {
 
     public Polygon kfzInPolygonObs(Obstacle obs) {
         Polygon q = new Polygon();
-        int halfW = (int)((obs.getObstacle_width() / 2) / pix);
-        int halfH = (int)((obs.getObstacle_height() / 2) / pix);
+        int w = (int)(obs.getObstacle_width() / pix);
+        int h = (int)(obs.getObstacle_height() / pix);
         int x = (int)(obs.position[0] / pix);
         int y = (int)(obs.position[1] / pix);
 
-        q.addPoint(x + halfW, y + halfH);
-        q.addPoint(x - halfW, y + halfH);
-        q.addPoint(x - halfW, y - halfH);
-        q.addPoint(x + halfW, y - halfH);
+        // Define the corners sequentially starting from the top-left (x, y)
+        q.addPoint(x, y);         // 1. Top-Left: (0, 0)
+        q.addPoint(x, y + h);     // 2. Bottom-Left: (0, 0 + height)
+        q.addPoint(x + w, y + h); // 3. Bottom-Right: (0 + width, 0 + height)
+        q.addPoint(x + w, y);     // 4. Top-Right: (0 + width, 0)
+
         return q;
-    }
-
-//    @Override
-    public void paintComponentA(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-
-        // 1. Paint Target
-        if (currentTarget != null) {
-            int tx = (int)(currentTarget[0] / pix);
-            int ty = (int)(currentTarget[1] / pix);
-            int size = 10;
-
-            // Set color based on whether the swarm has "found" it
-            g2d.setColor(isConsuming ? Color.GREEN : Color.RED);
-            g2d.fillOval(tx - size / 2, ty - size / 2, size, size);
-        }
-
-        // 2. Paint Vehicles
-        for (Vehicle fz : allVehicles) {
-            Polygon q = kfzInPolygon(fz);
-            g2d.setColor(Color.BLACK);
-            g2d.draw(q);
-
-            if (fz.type == 1) {
-                int seite = (int)(fz.rad_zus / pix);
-                g2d.drawOval((int)(fz.pos[0] / pix) - seite, (int)(fz.pos[1] / pix) - seite, 2 * seite, 2 * seite);
-                seite = (int)(fz.rad_sep / pix);
-                g2d.drawOval((int)(fz.pos[0] / pix) - seite, (int)(fz.pos[1] / pix) - seite, 2 * seite, 2 * seite);
-            }
-        }
-
-        // 3. Paint Obstacles
-        for (Obstacle obs : allObstacles) {
-            Polygon q = kfzInPolygonObs(obs);
-            g2d.setColor(Color.GRAY);
-            g2d.fill(q);
-            g2d.setColor(Color.BLACK);
-            g2d.draw(q);
-        }
     }
 
     @Override
@@ -117,8 +79,8 @@ public class Canvas extends JPanel {
         // 1. Draw the World Border (Matches vehicle physical boundaries)
         int minPixelX = (int)(10 / pix);
         int minPixelY = (int)(10 / pix);
-        int maxPixelX = (int)(1000 * Simulation.pix / pix);
-        int maxPixelY = (int)(700 * Simulation.pix / pix);
+        int maxPixelX = (int)(canvas_dimensions[0] * Simulation.pix / pix);
+        int maxPixelY = (int)(canvas_dimensions[1] * Simulation.pix / pix);
 
         int borderWidth = maxPixelX - minPixelX;
         int borderHeight = maxPixelY - minPixelY;
