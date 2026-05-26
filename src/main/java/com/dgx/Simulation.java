@@ -246,6 +246,20 @@ public class Simulation extends JFrame {
         targetToggleTile.add(new JLabel("Toggle Target/Type1"), BorderLayout.NORTH);
         targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
         controlPanel.add(targetToggleTile);
+
+        // 10) Manual target regeneration button
+        JButton btnNewTarget = new JButton("New target");
+        btnNewTarget.addActionListener(e -> {
+            isDispersing = false;
+            spawnNextTarget();
+            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
+            myCanvas.repaint();
+        });
+        JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
+        buttonTile.add(new JLabel("Manual Target"), BorderLayout.NORTH);
+        buttonTile.add(btnNewTarget, BorderLayout.CENTER);
+        controlPanel.add(buttonTile);
+
         // initialize canvas toggles to match checkbox defaults
         myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
         myCanvas.setShowType1Circle(chkType1Circle.isSelected());
