@@ -22,8 +22,8 @@ public class Vehicle {
 	Vehicle() {
 		allId++;
 		this.id = allId;
-		this.FZL = 2;
-		this.FZB = 1;
+		this.FZL = 3;
+		this.FZB = 1.5;
 		this.rad_sep = 5;
 		this.rad_zus = 25;
 		this.max_acc = 0.2;

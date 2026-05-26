@@ -29,7 +29,7 @@ public class Canvas extends JPanel {
         this.setBackground(Color.lightGray);
         this.canvas_dimensions[0] = width;
         this.canvas_dimensions[1] = height;
-        setSize(1000, 1000);
+        setSize(width, height);
     }
 
     // Method to update target data from the Simulation loop
@@ -55,22 +55,6 @@ public class Canvas extends JPanel {
         q.addPoint((int)(x + (dia * Math.cos(t + phi2))), (int)(y + (dia * Math.sin(t + phi2))));
         q.addPoint((int)(x + (dia * Math.cos(t + phi3))), (int)(y + (dia * Math.sin(t + phi3))));
         q.addPoint((int)(x + (dia * Math.cos(t + phi4))), (int)(y + (dia * Math.sin(t + phi4))));
-        return q;
-    }
-
-    public Polygon kfzInPolygonObs(Obstacle obs) {
-        Polygon q = new Polygon();
-        int w = (int)(obs.getObstacle_width() / pix);
-        int h = (int)(obs.getObstacle_height() / pix);
-        int x = (int)(obs.position[0] / pix);
-        int y = (int)(obs.position[1] / pix);
-
-        // Define the corners sequentially starting from the top-left (x, y)
-        q.addPoint(x, y);         // 1. Top-Left: (0, 0)
-        q.addPoint(x, y + h);     // 2. Bottom-Left: (0, 0 + height)
-        q.addPoint(x + w, y + h); // 3. Bottom-Right: (0 + width, 0 + height)
-        q.addPoint(x + w, y);     // 4. Top-Right: (0 + width, 0)
-
         return q;
     }
 
@@ -105,11 +89,40 @@ public class Canvas extends JPanel {
         g2d.setStroke(new java.awt.BasicStroke(world_border_thickness));
         g2d.draw(roundedWorld);
 
-        // 2. Paint Target
+        // 2. Paint spawnability overlay (green = allowed, red = blocked)
+        Graphics2D overlay = (Graphics2D) g2d.create();
+        int stepPx = 12; // grid cell size in pixels (tune for speed/clarity)
+        double buffer = 5.0; // buffer used when checking obstacle containment (world units)
+        int panelW = getWidth();
+        int panelH = getHeight();
+        for (int px = 0; px < panelW; px += stepPx) {
+            for (int py = 0; py < panelH; py += stepPx) {
+                double worldX = px * pix;
+                double worldY = py * pix;
+                boolean blocked = false;
+                for (Obstacle obs : allObstacles) {
+                    double ox = obs.position[0];
+                    double oy = obs.position[1];
+                    double ow = obs.getObstacle_width();
+                    double oh = obs.getObstacle_height();
+                    boolean insideX = worldX >= (ox - buffer) && worldX <= (ox + ow + buffer);
+                    boolean insideY = worldY >= (oy - buffer) && worldY <= (oy + oh + buffer);
+                    if (insideX && insideY) { blocked = true; break; }
+                }
+                if (blocked) overlay.setColor(new java.awt.Color(255, 0, 0, 40));
+                else overlay.setColor(new java.awt.Color(0, 255, 0, 20));
+                int w = Math.min(stepPx, panelW - px);
+                int h = Math.min(stepPx, panelH - py);
+                overlay.fillRect(px, py, w, h);
+            }
+        }
+        overlay.dispose();
+
+        // 3. Paint Target
         if (currentTarget != null) {
             int tx = (int)(currentTarget[0] / pix);
             int ty = (int)(currentTarget[1] / pix);
-            int size = 10;
+            int size = 20;
 
             g2d.setColor(isConsuming ? Color.GREEN : Color.RED);
             g2d.fillOval(tx - size / 2, ty - size / 2, size, size);
