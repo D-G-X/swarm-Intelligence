@@ -11,7 +11,7 @@ import javax.swing.*;
 
 public class Simulation extends JFrame {
 
-    int anzFz = 5; // number of cars (Anzahl Fahrzeuge)
+    int anzFz = 30; // number of cars (Anzahl Fahrzeuge)
     boolean isConsuming = false; // state when the vehicles are consuming the target
     boolean isDispersing = false; // state when the vehicles are done consuming the target
     long consumptionStartTime = 0; // timer after when the vehicles start consume the target
@@ -144,13 +144,20 @@ public class Simulation extends JFrame {
             currentTarget[0] = Math.random() * (maxX - minX) + minX;
             currentTarget[1] = Math.random() * (maxY - minY) + minY;
 
-            // 2. Check if it's inside an obstacle
+            // 2. Check if it's inside or too close to any obstacle rectangle
             for (Obstacle obs : allObstacles) {
-                double d = Math.sqrt(Math.pow(currentTarget[0] - obs.position[0], 2) +
-                        Math.pow(currentTarget[1] - obs.position[1], 2));
+                double ox = obs.position[0];
+                double oy = obs.position[1];
+                double ow = obs.getObstacle_width();
+                double oh = obs.getObstacle_height();
 
-                // Check if distance is less than half-width (10) + small buffer[cite: 4]
-                if (d < 15) {
+                // small buffer to avoid spawning exactly on the obstacle edge
+                double buffer = 5.0;
+
+                boolean insideX = currentTarget[0] >= (ox - buffer) && currentTarget[0] <= (ox + ow + buffer);
+                boolean insideY = currentTarget[1] >= (oy - buffer) && currentTarget[1] <= (oy + oh + buffer);
+
+                if (insideX && insideY) {
                     invalidLocation = true;
                     break;
                 }
