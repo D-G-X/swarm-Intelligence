@@ -10,6 +10,7 @@ import java.util.Arrays;
 import javax.swing.*;
 
 public class Simulation extends JFrame {
+
     int anzFz = 10; // number of cars (Anzahl Fahrzeuge)
     boolean isConsuming = false; // state when the vehicles are consuming the target
     boolean isDispersing = false; // state when the vehicles are done consuming the target
@@ -17,6 +18,8 @@ public class Simulation extends JFrame {
     long dispersalStartTime = 0; // timer for the dispersion of the vehicle
 
     Canvas myCanvas; // The Canvas (die Leinwand)
+    final int WIDTH = 1500;
+    final int HEIGHT = 1500;
     static int sleep = 8; // delay in frame
     static double pix = 0.3; // the scaling factor
     double[] currentTarget = null;
@@ -28,6 +31,7 @@ public class Simulation extends JFrame {
 
     Simulation() {
         setTitle("Die Schwarmintelligenz");
+        System.out.println("\"Die Schwarmintelligenz\"");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -40,8 +44,6 @@ public class Simulation extends JFrame {
         }
 
         System.out.println("Vehicles Generated");
-
-
 
         System.out.println("Extracting Obstacles Positions");
 
@@ -87,14 +89,11 @@ public class Simulation extends JFrame {
 
         System.out.println("\nObstacles Generated");
 
-        int width = 1500;
-        int height = 1500;
-
-        myCanvas = new Canvas(allVehicles, pix, allObstacles, width, height);
+        myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
 
         add(myCanvas);
 
-        setSize(1500, 1000 );
+        setSize(WIDTH, HEIGHT );
 
         setVisible(true);
 
@@ -105,10 +104,11 @@ public class Simulation extends JFrame {
         new Timer(sleep, e -> {
             checkTargetStatus();
             myCanvas.updateTarget(currentTarget, isConsuming);
+
             for (Vehicle v : allVehicles) {
-//                System.out.println(currentTarget[0]+","+currentTarget[1]);
                 v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
             }
+
             repaint();
         }).start();
     }
@@ -147,6 +147,8 @@ public class Simulation extends JFrame {
             if (attempts > 100) break;
 
         } while (invalidLocation);
+
+        System.out.println("New Target Position:\t"+currentTarget[0]+","+currentTarget[1]);
 
         isConsuming = false;
     }
