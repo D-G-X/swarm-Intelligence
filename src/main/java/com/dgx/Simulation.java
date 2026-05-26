@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 
 public class Simulation extends JFrame {
 
@@ -19,11 +23,11 @@ public class Simulation extends JFrame {
 
     Canvas myCanvas; // The Canvas (die Leinwand)
     final int WIDTH = 1475;
-    final int HEIGHT = 925;
+    final int HEIGHT = 800;
     final int WORLD_MARGIN = 10;
     final int WORLD_BORDER_WIDTH = 2;
     static int sleep = 8; // delay in frame
-    static double pix = 0.3; // the scaling factor
+    static double pix = 0.4; // the scaling factor
     double[] currentTarget = null;
 
     int numObstacles = 0;// position of the current target
@@ -103,7 +107,64 @@ public class Simulation extends JFrame {
         myCanvas.setWorld_margin(WORLD_MARGIN);
         myCanvas.setWorld_border_thickness(WORLD_BORDER_WIDTH);
 
-        add(myCanvas);
+        // Layout: canvas center, controls at bottom
+        getContentPane().setLayout(new BorderLayout());
+        add(myCanvas, BorderLayout.CENTER);
+
+        // Control panel with sliders for avoidance tuning
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        // 1) Base avoidance radius slider (0 - 200)
+        JLabel lblRadius = new JLabel("AvoidRadius: " + (int)Vehicle.BASE_AVOIDANCE_RADIUS);
+        JSlider sliderRadius = new JSlider(0, 200, (int)Math.round(Vehicle.BASE_AVOIDANCE_RADIUS));
+        sliderRadius.setMajorTickSpacing(50);
+        sliderRadius.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.BASE_AVOIDANCE_RADIUS = sliderRadius.getValue();
+                lblRadius.setText("AvoidRadius: " + sliderRadius.getValue());
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(lblRadius);
+        controlPanel.add(sliderRadius);
+
+        // 2) Avoidance multiplier slider (0.0 - 10.0 mapped to 0 - 100)
+        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
+        JSlider sliderMult = new JSlider(0, 100, (int)Math.round(Vehicle.AVOIDANCE_MULTIPLIER * 10));
+        sliderMult.setMajorTickSpacing(25);
+        sliderMult.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.AVOIDANCE_MULTIPLIER = sliderMult.getValue() / 10.0;
+                lblMult.setText("AvoidMult: " + String.format("%.1f", Vehicle.AVOIDANCE_MULTIPLIER));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(lblMult);
+        controlPanel.add(sliderMult);
+
+        // 3) Obstacle weight slider (0.0 - 2.0 mapped to 0 - 200)
+        JLabel lblWeight = new JLabel("ObsWeight: " + Vehicle.OBS_WEIGHT);
+        JSlider sliderWeight = new JSlider(0, 200, (int)Math.round(Vehicle.OBS_WEIGHT * 100));
+        sliderWeight.setMajorTickSpacing(50);
+        sliderWeight.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                Vehicle.OBS_WEIGHT = sliderWeight.getValue() / 100.0;
+                lblWeight.setText("ObsWeight: " + String.format("%.2f", Vehicle.OBS_WEIGHT));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(lblWeight);
+        controlPanel.add(sliderWeight);
+
+        // 4) Toggle obstacle avoidance radius visualization
+        JCheckBox chkRadius = new JCheckBox("Show obstacle radius", false);
+        chkRadius.addActionListener(e -> {
+            myCanvas.setShowObstacleRadius(chkRadius.isSelected());
+            myCanvas.repaint();
+        });
+        controlPanel.add(chkRadius);
+
+        add(controlPanel, BorderLayout.SOUTH);
 
         setSize(WIDTH, HEIGHT);
 

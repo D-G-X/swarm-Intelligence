@@ -1,50 +1,49 @@
-## Features & Logic
+# SwarmSimulation
 
-### 1. Swarm Intelligence (Boids Model)
+SwarmSimulation is a Java Swing project that simulates a swarm of autonomous vehicles navigating a 2D arena with static rectangular obstacles and dynamic targets.
 
-Each vehicle operates based on three local rules:
+## Features
 
-- **Separation**: Maintains a personal space to avoid collisions with neighbors.
-- **Alignment**: Adjusts heading to match the average direction of the local flock.
-- **Cohesion**: Steers toward the average position (center of mass) of nearby vehicles.
+### Swarm Behavior
 
-### 2. Foraging & Targeting
+- **Separation** keeps vehicles from crowding each other.
+- **Alignment** nudges vehicles toward the local average heading.
+- **Cohesion** pulls vehicles toward the local center of mass.
 
-- **Target Spawning**: Targets appear at random locations within the vehicle's reachable bounds, avoiding obstacle footprints.
-- **Consumption**: When the swarm reaches a target, they congregate for **3 seconds**. During this phase, "Alignment" forces are suppressed to allow vehicles to stop and gather.
-- **Dispersal Phase**: After a target is consumed, the swarm enters a **2-second dispersal state**, moving randomly to prevent clumping before the next target spawns.
+### Target Foraging
 
-### 3. Navigation & Obstacles
+- **Target spawning** places a new target in the world bounds while avoiding obstacle rectangles.
+- **Consumption** starts when a vehicle reaches the target area.
+- **Dispersal** briefly randomizes movement after a target is consumed so the swarm does not clump.
 
-- **Obstacle Avoidance**: Vehicles use an exponential "push-away" force to steer clear of gray obstacles.
-- **Reflective Boundaries**: The simulation uses a boundary box where vehicles bounce off the edges to remain within the visible window.
+### Obstacle Handling
+
+- **Obstacle avoidance** uses a repulsive force based on the closest point on each rectangular obstacle.
+- **World boundary bounce** keeps vehicles inside the active arena.
+- **Spawnability overlay** shows allowed cells in green and blocked cells in red.
+- **Obstacle radius overlay** can draw a dashed black avoidance radius around each obstacle.
+
+## Runtime Controls
+
+The bottom control panel lets you tune obstacle avoidance live:
+
+- **AvoidRadius**: changes the base sensing distance used for obstacle avoidance.
+- **AvoidMult**: changes how strongly vehicles push away when near obstacles.
+- **ObsWeight**: changes how much obstacle avoidance influences the final steering decision.
+- **Show obstacle radius**: toggles the dashed black radius visualization around each obstacle.
 
 ## Project Structure
 
-- `Simulation.java`: The application entry point. Manages the simulation loop, target lifecycle, and obstacle generation.
-- `Canvas.java`: Handles the rendering of rotated vehicle polygons, static obstacles, and the dynamic target.
-- `Vehicle.java`: Contains the core behavior logic, including steering weights and physical movement updates.
-- `Obstacle.java`: Represents the static box obstacles with configurable dimensions.
-- `VectorCalculation.java`: A utility class for 2D vector math, normalization, and truncation.
-
----
-
-**Note:** The simulation uses a coordinate scaling factor (`pix`) to map world physics to screen pixelsThis updated README expands on your project's logic, including the specific swarm intelligence principles and the "foraging" mechanics you implemented.
-
----
-
-# SwarmSimulation
-
-SwarmSimulation is a Java Swing-based project that simulates emergent behavior through a swarm of autonomous vehicles. The simulation demonstrates complex group dynamics as vehicles navigate around obstacles to "forage" for dynamic targets using Swarm Intelligence principles.
-
-## Screenshot
-
-![Simulation screenshot](simulation.png)
+- `src/main/java/com/dgx/Simulation.java`: application entry point, simulation loop, target spawning, and UI controls.
+- `src/main/java/com/dgx/Canvas.java`: renders vehicles, obstacles, targets, overlays, and debug visualizations.
+- `src/main/java/com/dgx/Vehicle.java`: vehicle movement, steering, obstacle avoidance, and swarm logic.
+- `src/main/java/com/dgx/Obstacle.java`: rectangular obstacle model.
+- `src/main/java/com/dgx/VectorCalculation.java`: helper methods for 2D vector math.
 
 ## Requirements
 
-- **Java 21**
-- **Maven 3.9+**
+- Java 21
+- Maven 3.9+
 
 ## Run
 
@@ -54,3 +53,9 @@ From the project root:
 mvn clean package
 java -cp target/classes com.dgx.Simulation
 ```
+
+## Notes
+
+- The simulation uses `pix` as a world-to-screen scaling factor.
+- Targets are spawned within the active arena and rejected if they overlap an obstacle.
+- The dashed radius visualization uses the same avoidance radius concept as the steering logic.

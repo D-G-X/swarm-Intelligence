@@ -3,9 +3,9 @@
 40 55 60 50 //top-left-2
 220 11 60 50 //top-mid-1
 250 55 60 50 //top-mid-2
-60 140 60 50 //top-mid-3
-225 100 60 50 //bottom-left-2
-11 227 120 50 //bottom-left-1
-11 180 60 50 //bottom-left-3
-322 227 120 50 //bottom-right-1
-382 182 60 50 //bottom-right-2
+225 100 60 50 //top-mid-3
+60 180 60 50 //bottom-left-2
+11 268 120 50 //bottom-left-1
+11 220 60 50 //bottom-left-3
+469 268 120 50 //bottom-right-1
+529 220 60 50 //bottom-right-2
