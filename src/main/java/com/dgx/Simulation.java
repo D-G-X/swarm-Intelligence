@@ -21,7 +21,7 @@ public class Simulation extends JFrame {
     final int WIDTH = 1475;
     final int HEIGHT = 925;
     final int WORLD_MARGIN = 10;
-    final int WORLD_BORDER_WIDTH = 3;
+    final int WORLD_BORDER_WIDTH = 2;
     static int sleep = 8; // delay in frame
     static double pix = 0.3; // the scaling factor
     double[] currentTarget = null;
@@ -72,18 +72,11 @@ public class Simulation extends JFrame {
                     double obs_height = Double.parseDouble(parts[3]);
 
                     // 2. Define your new centered world boundary thresholds for 1500x1500px window
-                    double minX = 150;
-                    double maxX = 350 - obs_width;
-                    double minY = 150;
-                    double maxY = 350 - obs_height;
+                    double maxX = WIDTH - obs_width;
+                    double maxY = HEIGHT - obs_height;
 
-                    // 3. Prevent any negative-space logic bugs
-                    if (maxX < minX) maxX = minX;
-                    if (maxY < minY) maxY = minY;
-
-                    // 4. Force the top-left anchor point inside the clean 1500px safe zone
-                    obs_pos[0] = Math.max(minX, Math.min(parsedX, maxX));
-                    obs_pos[1] = Math.max(minY, Math.min(parsedY, maxY));
+                    obs_pos[0] = Math.max(WORLD_MARGIN, Math.min(parsedX, maxX));
+                    obs_pos[1] = Math.max(WORLD_MARGIN, Math.min(parsedY, maxY));
 
                     allObstacles.add(new Obstacle(obs_pos, obs_width, obs_height));
                 }
@@ -120,16 +113,16 @@ public class Simulation extends JFrame {
 
         myCanvas.updateTarget(currentTarget, isConsuming);
 
-//        new Timer(sleep, e -> {
-//            checkTargetStatus();
-//            myCanvas.updateTarget(currentTarget, isConsuming);
-//
-//            for (Vehicle v : allVehicles) {
-//                v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
-//            }
-//
-//            repaint();
-//        }).start();
+        new Timer(sleep, e -> {
+            checkTargetStatus();
+            myCanvas.updateTarget(currentTarget, isConsuming);
+
+            for (Vehicle v : allVehicles) {
+                v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
+            }
+
+            repaint();
+        }).start();
     }
 
     void spawnNextTarget() {

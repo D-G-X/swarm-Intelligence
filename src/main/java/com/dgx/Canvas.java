@@ -88,17 +88,22 @@ public class Canvas extends JPanel {
         int borderWidth = maxPixelX - minPixelX;
         int borderHeight = maxPixelY - minPixelY;
 
-        // Draw a light gray filled background for the active simulation zone
+        // Choose how round you want the outer arena to look (e.g., 30 pixels)
+        double worldCornerRounding = 30.0;
+
+        // Create a rounded rectangle for the global boundary area
+        java.awt.geom.RoundRectangle2D roundedWorld = new java.awt.geom.RoundRectangle2D.Double(
+                minPixelX, minPixelY, borderWidth, borderHeight, worldCornerRounding, worldCornerRounding
+        );
+
+        // Draw a soft light-gray filled background inside the active simulation zone
         g2d.setColor(new Color(245, 245, 245));
-        g2d.fillRect(minPixelX, minPixelY, borderWidth, borderHeight);
+        g2d.fill(roundedWorld);
 
-        // Draw a thick dark border line
+        // Draw the thick dark frame line
         g2d.setColor(Color.DARK_GRAY);
-        g2d.setStroke(new java.awt.BasicStroke(world_border_thickness)); // Gives the line some weight
-        g2d.drawRect(minPixelX, minPixelY, borderWidth, borderHeight);
-
-        // Reset stroke back to default so other elements draw normally
-        g2d.setStroke(new java.awt.BasicStroke(1));
+        g2d.setStroke(new java.awt.BasicStroke(world_border_thickness));
+        g2d.draw(roundedWorld);
 
         // 2. Paint Target
         if (currentTarget != null) {
@@ -126,11 +131,21 @@ public class Canvas extends JPanel {
 
         // 4. Paint Obstacles
         for (Obstacle obs : allObstacles) {
-            Polygon q = kfzInPolygonObs(obs);
-            g2d.setColor(Color.GRAY);
-            g2d.fill(q);
-            g2d.setColor(Color.BLACK);
-            g2d.draw(q);
+            // Scale everything to pixel positions
+            double x = obs.position[0] / pix;
+            double y = obs.position[1] / pix;
+            double w = obs.getObstacle_width() / pix;
+            double h = obs.getObstacle_height() / pix;
+
+            double cornerRounding = 15.0;
+
+            java.awt.geom.RoundRectangle2D roundedBox = new java.awt.geom.RoundRectangle2D.Double(
+                    x, y, w, h, cornerRounding, cornerRounding
+            );
+
+            g2d.setColor(new Color(255, 236, 153));
+            g2d.fill(roundedBox);
+            g2d.draw(roundedBox);
         }
     }
 
