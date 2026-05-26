@@ -34,6 +34,11 @@ The bottom control panel now uses a compact 2-row x 5-column layout so the contr
 - **ObsWeight**: changes how much obstacle avoidance influences the final steering decision.
 - **Show obstacle radius**: toggles the dashed black radius visualization around each obstacle.
 
+### Target / Detection Controls
+
+- **Target DetectRadius**: controls the radius used to decide when the swarm has "detected" a target (used by the nearest vehicle). This updates at runtime.
+- **Show target radius**: toggle to draw a dashed circle around the current target showing the detection radius.
+
 ### Swarm Weight Controls
 
 - **F_zus**: controls cohesion strength.
@@ -46,6 +51,12 @@ The bottom control panel now uses a compact 2-row x 5-column layout so the contr
 - Higher values generally make the corresponding behavior stronger.
 - Lower values reduce that behavior's influence on the final vehicle motion.
 - The obstacle radius overlay uses the same avoidance radius concept as the steering logic.
+
+## Spawn & Initialization
+
+- Vehicles are now initially spawned inside a circular zone near the top-right of the world instead of uniformly across the arena. This helps test behaviors starting from a compact launch area.
+- **Show spawn area**: toggle in the control panel that draws the initial spawn circle as a red dotted outline (visual only).
+- **Show type1 circle**: toggle that controls whether the type-1 vehicles draw their separation/cohesion circles (used for debugging individual vehicle ranges).
 
 ## Project Structure
 
