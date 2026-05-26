@@ -1,11 +1,11 @@
 10
-11 11 60 50 //top-left-1
+10 10 60 50 //top-left-1
 40 55 60 50 //top-left-2
-220 11 60 50 //top-mid-1
+220 10 60 50 //top-mid-1
 250 55 60 50 //top-mid-2
 225 100 60 50 //top-mid-3
 60 180 60 50 //bottom-left-2
-11 268 120 50 //bottom-left-1
-11 220 60 50 //bottom-left-3
+10 268 120 50 //bottom-left-1
+10 223 60 50 //bottom-left-3
 469 268 120 50 //bottom-right-1
 529 220 60 50 //bottom-right-2

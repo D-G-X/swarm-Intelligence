@@ -322,25 +322,57 @@ public class Vehicle {
 
 	double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
 		double[] acc_total = new double[2];
-		// base sensing radius (tunable)
-		double avoidanceRadius = BASE_AVOIDANCE_RADIUS;
+		// Use a short look-ahead so vehicles begin steering before the body reaches the box.
+		double speed = VectorCalculation.length(vel);
+		double lookAheadDistance = Math.max(12.0, speed * 18.0);
+		double[] lookAhead = new double[]{pos[0], pos[1]};
+		if (speed > 1e-8) {
+			double[] forward = VectorCalculation.normalize(vel);
+			lookAhead[0] += forward[0] * lookAheadDistance;
+			lookAhead[1] += forward[1] * lookAheadDistance;
+		}
 
 		for (Obstacle obs : obstacles) {
-			double dx = pos[0] - obs.position[0];
-			double dy = pos[1] - obs.position[1];
+			double ox = obs.position[0];
+			double oy = obs.position[1];
+			double ow = obs.getObstacle_width();
+			double oh = obs.getObstacle_height();
+
+			// Closest point on the rectangle to the look-ahead point.
+			double closestX = Math.max(ox, Math.min(lookAhead[0], ox + ow));
+			double closestY = Math.max(oy, Math.min(lookAhead[1], oy + oh));
+
+			double dx = lookAhead[0] - closestX;
+			double dy = lookAhead[1] - closestY;
 			double dist = Math.sqrt(dx * dx + dy * dy);
 
-			// If the vehicle is inside or very close to the radius
+			// Sensing radius grows with obstacle size so larger boxes are avoided earlier.
+			double avoidanceRadius = BASE_AVOIDANCE_RADIUS + Math.max(ow, oh) * 0.5;
+
 			if (dist < avoidanceRadius) {
 				double[] pushAway = new double[]{dx, dy};
 
 				if (VectorCalculation.length(pushAway) > 1e-8) {
 					pushAway = VectorCalculation.normalize(pushAway);
+				} else {
+					// If the look-ahead lands inside the obstacle, push away from the obstacle center.
+					pushAway[0] = lookAhead[0] - (ox + ow / 2.0);
+					pushAway[1] = lookAhead[1] - (oy + oh / 2.0);
+					if (VectorCalculation.length(pushAway) > 1e-8) {
+						pushAway = VectorCalculation.normalize(pushAway);
+					} else {
+						// Final fallback: steer sideways relative to current heading.
+						pushAway[0] = -vel[1];
+						pushAway[1] = vel[0];
+						if (VectorCalculation.length(pushAway) > 1e-8) {
+							pushAway = VectorCalculation.normalize(pushAway);
+						}
+					}
 				}
 
-				// Exponential force scaled by tunable multiplier
-				double intensity = Math.pow((avoidanceRadius / Math.max(dist, 1.0)), 2) * AVOIDANCE_MULTIPLIER;
-
+				// Stronger response the closer the look-ahead point is to the obstacle.
+				double gap = Math.max(avoidanceRadius - dist, 0.0);
+				double intensity = Math.pow(gap / Math.max(avoidanceRadius, 1.0), 2) * AVOIDANCE_MULTIPLIER;
 				acc_total[0] += pushAway[0] * intensity;
 				acc_total[1] += pushAway[1] * intensity;
 			}

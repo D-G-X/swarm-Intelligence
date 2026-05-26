@@ -46,7 +46,7 @@ public class Simulation extends JFrame {
 
         for (int k = 0; k < anzFz; k++) {
             Vehicle car = new Vehicle();
-            // if (k < 0) car.type = 1; // type 1 has visible boundary
+            if (k < 5) car.type = 1; // type 1 has visible boundary
             allVehicles.add(car);
         }
 
