@@ -252,7 +252,7 @@ public class Simulation extends JFrame {
         controlPanel.add(targetToggleTile);
 
         // 10) Manual target regeneration button
-        JButton btnNewTarget = new JButton("New target");
+        JButton btnNewTarget = new JButton("New Target");
         btnNewTarget.addActionListener(e -> {
             isDispersing = false;
             spawnNextTarget();
@@ -260,7 +260,6 @@ public class Simulation extends JFrame {
             myCanvas.repaint();
         });
         JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
-        buttonTile.add(new JLabel("Manual Target"), BorderLayout.NORTH);
         buttonTile.add(btnNewTarget, BorderLayout.CENTER);
         controlPanel.add(buttonTile);
 

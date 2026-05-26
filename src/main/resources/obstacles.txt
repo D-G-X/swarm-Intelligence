@@ -5,7 +5,7 @@
 250 55 60 50 //top-mid-2
 225 100 60 50 //top-mid-3
 60 180 60 50 //bottom-left-2
-10 268 120 50 //bottom-left-1
+10 269 120 50 //bottom-left-1
 10 223 60 50 //bottom-left-3
-469 268 120 50 //bottom-right-1
+469 269 120 50 //bottom-right-1
 529 220 60 50 //bottom-right-2
