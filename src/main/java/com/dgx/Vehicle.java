@@ -398,7 +398,7 @@ public class Vehicle {
 		}
 
         //   If the position is close to the right-edge then velocity is set to negative to move back to the left edge
-		if (pos[0] > 1000 * Simulation.pix) {
+		if (pos[0] > Simulation.WIDTH * Simulation.pix) {
 			vel[0] = -Math.abs(vel[0]);
 			pos[0] = pos[0] + vel[0];
 		}
@@ -410,7 +410,7 @@ public class Vehicle {
 		}
 
         //   If the position is close to the bottom-edge then
-		if (pos[1] > 700 * Simulation.pix) {
+		if (pos[1] > Simulation.HEIGHT * Simulation.pix) {
 			vel[1] = -Math.abs(vel[1]);
 			pos[1] = pos[1] + vel[1];
 		}

@@ -24,8 +24,8 @@ public class Simulation extends JFrame {
     double targetDetectionRadius = 15.0; // radius used to detect the target
 
     Canvas myCanvas; // The Canvas (die Leinwand)
-    final int WIDTH = 1475;
-    final int HEIGHT = 800;
+    static final int WIDTH = 1475;
+    static final int HEIGHT = 800;
     final int WORLD_MARGIN = 10;
     final int WORLD_BORDER_WIDTH = 2;
     static int sleep = 8; // delay in frame
@@ -283,10 +283,10 @@ public class Simulation extends JFrame {
         int attempts = 0;
 
         // Define the same boundaries the vehicles use in position_Box()
-        double minX = 15; // Slightly inside the 10-unit left wall
-        double maxX = (1000 * pix) - 15;
-        double minY = 15; // Slightly inside the 10-unit top wall
-        double maxY = (700 * pix) - 15;
+        double minX = WORLD_MARGIN + 5;
+        double maxX = (WIDTH * pix) - (WORLD_MARGIN + 5);
+        double minY = WORLD_MARGIN + 5;
+        double maxY = (HEIGHT * pix) - (WORLD_MARGIN + 5);
 
         do {
             invalidLocation = false;
