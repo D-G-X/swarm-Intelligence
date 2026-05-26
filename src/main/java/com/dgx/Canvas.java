@@ -17,6 +17,9 @@ public class Canvas extends JPanel {
     double[] currentTarget;
     boolean isConsuming;
     boolean showObstacleRadius;
+    boolean showTargetDetectionRadius;
+    double targetDetectionRadius;
+    boolean showType1Circle;
 
     private int world_margin;
     private int world_border_thickness;
@@ -34,13 +37,22 @@ public class Canvas extends JPanel {
     }
 
     // Method to update target data from the Simulation loop
-    public void updateTarget(double[] target, boolean consuming) {
+    public void updateTarget(double[] target, boolean consuming, double targetDetectionRadius) {
         this.currentTarget = target;
         this.isConsuming = consuming;
+        this.targetDetectionRadius = targetDetectionRadius;
     }
 
     public void setShowObstacleRadius(boolean showObstacleRadius) {
         this.showObstacleRadius = showObstacleRadius;
+    }
+
+    public void setShowTargetDetectionRadius(boolean showTargetDetectionRadius) {
+        this.showTargetDetectionRadius = showTargetDetectionRadius;
+    }
+
+    public void setShowType1Circle(boolean showType1Circle) {
+        this.showType1Circle = showType1Circle;
     }
 
     public Polygon kfzInPolygon(Vehicle fz) {
@@ -131,6 +143,30 @@ public class Canvas extends JPanel {
 
             g2d.setColor(isConsuming ? Color.GREEN : Color.RED);
             g2d.fillOval(tx - size / 2, ty - size / 2, size, size);
+
+            if (showTargetDetectionRadius) {
+                double radiusPx = targetDetectionRadius / pix;
+                double diameterPx = radiusPx * 2.0;
+
+                Graphics2D targetRadiusGraphics = (Graphics2D) g2d.create();
+                float[] dashPattern = {6.0f, 6.0f};
+                targetRadiusGraphics.setColor(new Color(0, 0, 0, 180));
+                targetRadiusGraphics.setStroke(new java.awt.BasicStroke(
+                        1.5f,
+                        java.awt.BasicStroke.CAP_BUTT,
+                        java.awt.BasicStroke.JOIN_MITER,
+                        10.0f,
+                        dashPattern,
+                        0.0f
+                ));
+                targetRadiusGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+                        tx - radiusPx,
+                        ty - radiusPx,
+                        diameterPx,
+                        diameterPx
+                ));
+                targetRadiusGraphics.dispose();
+            }
         }
 
         // 3. Paint Vehicles
@@ -139,7 +175,7 @@ public class Canvas extends JPanel {
             g2d.setColor(Color.BLACK);
             g2d.draw(q);
 
-            if (fz.type == 1) {
+            if (fz.type == 1 && showType1Circle) {
                 int seite = (int)(fz.rad_zus / pix);
                 g2d.drawOval((int)(fz.pos[0] / pix) - seite, (int)(fz.pos[1] / pix) - seite, 2 * seite, 2 * seite);
                 seite = (int)(fz.rad_sep / pix);

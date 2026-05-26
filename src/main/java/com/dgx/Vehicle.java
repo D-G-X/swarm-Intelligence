@@ -5,9 +5,9 @@ import java.util.ArrayList;
 public class Vehicle {
 	static int allId = 0;
 	// Tunable avoidance constants (adjustable at runtime via UI)
-	public static double BASE_AVOIDANCE_RADIUS = 30.0; // world units
+	public static double BASE_AVOIDANCE_RADIUS = 19.0; // world units
 	public static double AVOIDANCE_MULTIPLIER = 4.0;   // intensity scaling
-	public static double OBS_WEIGHT = 0.8;            // weight used when combining forces
+	public static double OBS_WEIGHT = 0.25;            // weight used when combining forces
 	public static double F_ZUS_WEIGHT = 0.05;
 	public static double F_SEP_WEIGHT = 0.55;
 	public static double F_AUS_WEIGHT = 0.4;
@@ -212,8 +212,7 @@ public class Vehicle {
         // 1. Define all weights
 		double f_zus = F_ZUS_WEIGHT;
 		double f_sep = F_SEP_WEIGHT;
-		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
-//        double f_target = 0.3;
+		double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT; // Keep obstacle avoidance strong while consuming
 		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
         double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
 
@@ -273,9 +272,14 @@ public class Vehicle {
         double[] acc;
 
         if (isDispersing) {
-            // Move randomly: ignore target, high noise/random force
+			// Move randomly, but still avoid obstacles while dispersing
             double[] randomAcc = new double[]{(Math.random() - 0.5), (Math.random() - 0.5)};
-            acc = VectorCalculation.truncate(randomAcc, max_acc);
+			double[] avoidAcc = obstacleAvoidance(obs);
+			double[] disperseAcc = new double[]{
+					randomAcc[0] + (avoidAcc[0] * 1.5),
+					randomAcc[1] + (avoidAcc[1] * 1.5)
+			};
+			acc = VectorCalculation.truncate(disperseAcc, max_acc);
         } else {
             acc = calculateWeightedAcc(allVehicles, obs, target,  isConsuming);
         }
@@ -322,25 +326,57 @@ public class Vehicle {
 
 	double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
 		double[] acc_total = new double[2];
-		// base sensing radius (tunable)
-		double avoidanceRadius = BASE_AVOIDANCE_RADIUS;
+		// Use a short look-ahead so vehicles begin steering before the body reaches the box.
+		double speed = VectorCalculation.length(vel);
+		double lookAheadDistance = Math.max(12.0, speed * 18.0);
+		double[] lookAhead = new double[]{pos[0], pos[1]};
+		if (speed > 1e-8) {
+			double[] forward = VectorCalculation.normalize(vel);
+			lookAhead[0] += forward[0] * lookAheadDistance;
+			lookAhead[1] += forward[1] * lookAheadDistance;
+		}
 
 		for (Obstacle obs : obstacles) {
-			double dx = pos[0] - obs.position[0];
-			double dy = pos[1] - obs.position[1];
+			double ox = obs.position[0];
+			double oy = obs.position[1];
+			double ow = obs.getObstacle_width();
+			double oh = obs.getObstacle_height();
+
+			// Closest point on the rectangle to the look-ahead point.
+			double closestX = Math.max(ox, Math.min(lookAhead[0], ox + ow));
+			double closestY = Math.max(oy, Math.min(lookAhead[1], oy + oh));
+
+			double dx = lookAhead[0] - closestX;
+			double dy = lookAhead[1] - closestY;
 			double dist = Math.sqrt(dx * dx + dy * dy);
 
-			// If the vehicle is inside or very close to the radius
+			// Sensing radius grows with obstacle size so larger boxes are avoided earlier.
+			double avoidanceRadius = BASE_AVOIDANCE_RADIUS + Math.max(ow, oh) * 0.5;
+
 			if (dist < avoidanceRadius) {
 				double[] pushAway = new double[]{dx, dy};
 
 				if (VectorCalculation.length(pushAway) > 1e-8) {
 					pushAway = VectorCalculation.normalize(pushAway);
+				} else {
+					// If the look-ahead lands inside the obstacle, push away from the obstacle center.
+					pushAway[0] = lookAhead[0] - (ox + ow / 2.0);
+					pushAway[1] = lookAhead[1] - (oy + oh / 2.0);
+					if (VectorCalculation.length(pushAway) > 1e-8) {
+						pushAway = VectorCalculation.normalize(pushAway);
+					} else {
+						// Final fallback: steer sideways relative to current heading.
+						pushAway[0] = -vel[1];
+						pushAway[1] = vel[0];
+						if (VectorCalculation.length(pushAway) > 1e-8) {
+							pushAway = VectorCalculation.normalize(pushAway);
+						}
+					}
 				}
 
-				// Exponential force scaled by tunable multiplier
-				double intensity = Math.pow((avoidanceRadius / Math.max(dist, 1.0)), 2) * AVOIDANCE_MULTIPLIER;
-
+				// Stronger response the closer the look-ahead point is to the obstacle.
+				double gap = Math.max(avoidanceRadius - dist, 0.0);
+				double intensity = Math.pow(gap / Math.max(avoidanceRadius, 1.0), 2) * AVOIDANCE_MULTIPLIER;
 				acc_total[0] += pushAway[0] * intensity;
 				acc_total[1] += pushAway[1] * intensity;
 			}
