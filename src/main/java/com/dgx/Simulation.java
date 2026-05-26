@@ -226,7 +226,7 @@ public class Simulation extends JFrame {
         controlPanel.add(toggleTile);
 
         // 9) Toggle target detection radius visualization + show type1 circles
-        JCheckBox chkTargetRadius = new JCheckBox("Show target radius", false);
+        JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
             myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
             myCanvas.repaint();
@@ -238,7 +238,7 @@ public class Simulation extends JFrame {
             myCanvas.repaint();
         });
 
-        JPanel combinedToggleCenter = new JPanel(new GridLayout(2, 1, 4, 4));
+        JPanel combinedToggleCenter = new JPanel(new GridLayout(1, 2, 12, 4));
         combinedToggleCenter.add(chkTargetRadius);
         combinedToggleCenter.add(chkType1Circle);
 
@@ -246,6 +246,9 @@ public class Simulation extends JFrame {
         targetToggleTile.add(new JLabel("Toggle Target/Type1"), BorderLayout.NORTH);
         targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
         controlPanel.add(targetToggleTile);
+        // initialize canvas toggles to match checkbox defaults
+        myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
+        myCanvas.setShowType1Circle(chkType1Circle.isSelected());
 
         // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
         while (controlPanel.getComponentCount() < 10) {
