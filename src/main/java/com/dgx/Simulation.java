@@ -202,7 +202,7 @@ public class Simulation extends JFrame {
         controlPanel.add(controlTile.apply(lblAus, sliderAus));
 
         // 7) Target detection radius slider (1 - 50)
-        JLabel lblDetect = new JLabel("DetectRadius: " + String.format("%.1f", targetDetectionRadius));
+        JLabel lblDetect = new JLabel("Target DetectRadius: " + String.format("%.1f", targetDetectionRadius));
         JSlider sliderDetect = new JSlider(1, 50, (int)Math.round(targetDetectionRadius));
         sliderDetect.setMajorTickSpacing(10);
         sliderDetect.addChangeListener(new ChangeListener() {
@@ -221,7 +221,7 @@ public class Simulation extends JFrame {
             myCanvas.repaint();
         });
         JPanel toggleTile = new JPanel(new BorderLayout(4, 4));
-        toggleTile.add(new JLabel("Debug Toggle"), BorderLayout.NORTH);
+        toggleTile.add(new JLabel("Toggle Obstacle Radius"), BorderLayout.NORTH);
         toggleTile.add(chkRadius, BorderLayout.CENTER);
         controlPanel.add(toggleTile);
 
@@ -232,7 +232,7 @@ public class Simulation extends JFrame {
             myCanvas.repaint();
         });
         JPanel targetToggleTile = new JPanel(new BorderLayout(4, 4));
-        targetToggleTile.add(new JLabel("Debug Toggle 2"), BorderLayout.NORTH);
+        targetToggleTile.add(new JLabel("Toggle Target Radius"), BorderLayout.NORTH);
         targetToggleTile.add(chkTargetRadius, BorderLayout.CENTER);
         controlPanel.add(targetToggleTile);
 
