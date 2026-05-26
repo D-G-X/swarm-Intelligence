@@ -21,6 +21,7 @@ public class Simulation extends JFrame {
     boolean isDispersing = false; // state when the vehicles are done consuming the target
     long consumptionStartTime = 0; // timer after when the vehicles start consume the target
     long dispersalStartTime = 0; // timer for the dispersion of the vehicle
+    double targetDetectionRadius = 5.0; // radius used to detect the target
 
     Canvas myCanvas; // The Canvas (die Leinwand)
     final int WIDTH = 1475;
@@ -200,7 +201,20 @@ public class Simulation extends JFrame {
         });
         controlPanel.add(controlTile.apply(lblAus, sliderAus));
 
-        // 4) Toggle obstacle avoidance radius visualization
+        // 7) Target detection radius slider (1 - 50)
+        JLabel lblDetect = new JLabel("DetectRadius: " + String.format("%.1f", targetDetectionRadius));
+        JSlider sliderDetect = new JSlider(1, 50, (int)Math.round(targetDetectionRadius));
+        sliderDetect.setMajorTickSpacing(10);
+        sliderDetect.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                targetDetectionRadius = sliderDetect.getValue();
+                lblDetect.setText("DetectRadius: " + String.format("%.1f", targetDetectionRadius));
+                myCanvas.repaint();
+            }
+        });
+        controlPanel.add(controlTile.apply(lblDetect, sliderDetect));
+
+        // 8) Toggle obstacle avoidance radius visualization
         JCheckBox chkRadius = new JCheckBox("Show obstacle radius", false);
         chkRadius.addActionListener(e -> {
             myCanvas.setShowObstacleRadius(chkRadius.isSelected());
@@ -210,6 +224,17 @@ public class Simulation extends JFrame {
         toggleTile.add(new JLabel("Debug Toggle"), BorderLayout.NORTH);
         toggleTile.add(chkRadius, BorderLayout.CENTER);
         controlPanel.add(toggleTile);
+
+        // 9) Toggle target detection radius visualization
+        JCheckBox chkTargetRadius = new JCheckBox("Show target radius", false);
+        chkTargetRadius.addActionListener(e -> {
+            myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel targetToggleTile = new JPanel(new BorderLayout(4, 4));
+        targetToggleTile.add(new JLabel("Debug Toggle 2"), BorderLayout.NORTH);
+        targetToggleTile.add(chkTargetRadius, BorderLayout.CENTER);
+        controlPanel.add(targetToggleTile);
 
         // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
         while (controlPanel.getComponentCount() < 10) {
@@ -224,11 +249,11 @@ public class Simulation extends JFrame {
 
         spawnNextTarget();
 
-        myCanvas.updateTarget(currentTarget, isConsuming);
+        myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
 
         new Timer(sleep, e -> {
             checkTargetStatus();
-            myCanvas.updateTarget(currentTarget, isConsuming);
+            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
 
             for (Vehicle v : allVehicles) {
                 v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
@@ -297,7 +322,7 @@ public class Simulation extends JFrame {
             for (Vehicle v : allVehicles) {
                 double d = Math.sqrt(Math.pow(v.pos[0] - currentTarget[0], 2) +
                         Math.pow(v.pos[1] - currentTarget[1], 2));
-                if (d < 5) {
+                if (d < targetDetectionRadius) {
                     isConsuming = true;
                     consumptionStartTime = System.currentTimeMillis();
                     break;
