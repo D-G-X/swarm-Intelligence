@@ -114,7 +114,11 @@ public class Simulation extends JFrame {
         add(myCanvas, BorderLayout.CENTER);
 
         // Control panel with compact tiles arranged in 2 rows x 5 columns
-        JPanel controlPanel = new JPanel(new GridLayout(2, 5, 8, 8));
+            JPanel controlPanel = new JPanel(new GridLayout(2, 5, 0, 4));
+            controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        controlPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Control Panel"),
+            BorderFactory.createEmptyBorder(8, 0, 10, 0)));
 
         java.util.function.BiFunction<JLabel, JSlider, JPanel> controlTile = (label, slider) -> {
             JPanel tile = new JPanel(new BorderLayout(4, 4));
