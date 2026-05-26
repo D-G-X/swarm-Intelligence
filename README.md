@@ -2,6 +2,8 @@
 
 SwarmSimulation is a Java Swing project that simulates a swarm of autonomous vehicles navigating a 2D arena with static rectangular obstacles and dynamic targets.
 
+![SwarmSimulation v2](v2.png)
+
 ## Features
 
 ### Swarm Behavior
