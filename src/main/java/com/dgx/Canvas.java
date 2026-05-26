@@ -106,6 +106,53 @@ public class Canvas extends JPanel {
         g2d.setStroke(new java.awt.BasicStroke(world_border_thickness));
         g2d.draw(roundedWorld);
 
+        // 1b. Paint the initial vehicle spawn circle in the top-right corner.
+        double spawnRadiusWorld = Simulation.SPAWN_POINT_RADIUS;
+        double spawnCenterWorldX = (canvas_dimensions[0] * Simulation.pix) - world_margin - spawnRadiusWorld;
+        double spawnCenterWorldY = world_margin + spawnRadiusWorld;
+        double spawnRadiusPx = spawnRadiusWorld / pix;
+        double spawnCenterPxX = spawnCenterWorldX / pix;
+        double spawnCenterPxY = spawnCenterWorldY / pix;
+
+        Graphics2D spawnGraphics = (Graphics2D) g2d.create();
+        float[] spawnDashPattern = {4.0f, 6.0f};
+        spawnGraphics.setColor(new Color(220, 0, 0));
+        spawnGraphics.setStroke(new java.awt.BasicStroke(
+            1.6f,
+            java.awt.BasicStroke.CAP_BUTT,
+            java.awt.BasicStroke.JOIN_MITER,
+            10.0f,
+            spawnDashPattern,
+            0.0f
+        ));
+        spawnGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+            spawnCenterPxX - spawnRadiusPx,
+            spawnCenterPxY - spawnRadiusPx,
+            spawnRadiusPx * 2.0,
+            spawnRadiusPx * 2.0
+        ));
+
+        spawnGraphics.setFont(spawnGraphics.getFont().deriveFont(java.awt.Font.BOLD, 12.0f));
+        java.awt.FontMetrics spawnMetrics = spawnGraphics.getFontMetrics();
+        String spawnLabelTop = "SPAWN POINT";
+        String spawnLabelBottom = "(Spawnpunkt)";
+        int topLabelWidth = spawnMetrics.stringWidth(spawnLabelTop);
+        int bottomLabelWidth = spawnMetrics.stringWidth(spawnLabelBottom);
+        int labelAscent = spawnMetrics.getAscent();
+        int lineGap = spawnMetrics.getHeight() - labelAscent;
+        spawnGraphics.setColor(new Color(160, 0, 0));
+        spawnGraphics.drawString(
+            spawnLabelTop,
+            (float)(spawnCenterPxX - topLabelWidth / 2.0),
+            (float)(spawnCenterPxY - 2.0)
+        );
+        spawnGraphics.drawString(
+            spawnLabelBottom,
+            (float)(spawnCenterPxX - bottomLabelWidth / 2.0),
+            (float)(spawnCenterPxY + labelAscent + lineGap)
+        );
+        spawnGraphics.dispose();
+
         // 2. Paint spawnability overlay (green = allowed, red = blocked)
         Graphics2D overlay = (Graphics2D) g2d.create();
         int stepPx = 12; // grid cell size in pixels (tune for speed/clarity)

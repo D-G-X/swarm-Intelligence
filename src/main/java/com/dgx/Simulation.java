@@ -16,6 +16,8 @@ import java.awt.FlowLayout;
 
 public class Simulation extends JFrame {
 
+    static final double SPAWN_POINT_RADIUS = 40.0;
+
     int anzFz = 30; // number of cars (Anzahl Fahrzeuge)
     boolean isConsuming = false; // state when the vehicles are consuming the target
     boolean isDispersing = false; // state when the vehicles are done consuming the target
@@ -42,16 +44,6 @@ public class Simulation extends JFrame {
         System.out.println("\"Die Schwarmintelligenz\"");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        System.out.println("Generating Vehicles");
-
-        for (int k = 0; k < anzFz; k++) {
-            Vehicle car = new Vehicle();
-            car.type = 1; // type 1 has visible boundary
-            allVehicles.add(car);
-        }
-
-        System.out.println("Vehicles Generated");
 
         System.out.println("Extracting Obstacles Positions");
 
@@ -103,6 +95,17 @@ public class Simulation extends JFrame {
         }
 
         System.out.println("\nObstacles Generated");
+
+        System.out.println("Generating Vehicles");
+
+        for (int k = 0; k < anzFz; k++) {
+            Vehicle car = new Vehicle();
+            car.type = 1; // type 1 has visible boundary
+            placeVehicleInSpawnCircle(car);
+            allVehicles.add(car);
+        }
+
+        System.out.println("Vehicles Generated");
 
         myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
 
@@ -339,6 +342,49 @@ public class Simulation extends JFrame {
         System.out.println("New Target Position:\t"+currentTarget[0]+","+currentTarget[1]);
 
         isConsuming = false;
+    }
+
+    private void placeVehicleInSpawnCircle(Vehicle car) {
+        final double spawnRadius = SPAWN_POINT_RADIUS;
+        final double spawnCenterX = (WIDTH * pix) - WORLD_MARGIN - spawnRadius;
+        final double spawnCenterY = WORLD_MARGIN + spawnRadius;
+
+        boolean invalidLocation;
+        int attempts = 0;
+
+        do {
+            invalidLocation = false;
+            attempts++;
+
+            double angle = 2.0 * Math.PI * Math.random();
+            double distance = spawnRadius * Math.sqrt(Math.random());
+
+            car.pos[0] = spawnCenterX + Math.cos(angle) * distance;
+            car.pos[1] = spawnCenterY + Math.sin(angle) * distance;
+
+            for (Obstacle obs : allObstacles) {
+                double ox = obs.position[0];
+                double oy = obs.position[1];
+                double ow = obs.getObstacle_width();
+                double oh = obs.getObstacle_height();
+
+                boolean insideX = car.pos[0] >= ox && car.pos[0] <= (ox + ow);
+                boolean insideY = car.pos[1] >= oy && car.pos[1] <= (oy + oh);
+
+                if (insideX && insideY) {
+                    invalidLocation = true;
+                    break;
+                }
+            }
+
+            if (attempts > 100) {
+                break;
+            }
+        } while (invalidLocation);
+
+        double angle = 2.0 * Math.PI * Math.random();
+        car.vel[0] = Math.cos(angle) * car.max_vel;
+        car.vel[1] = Math.sin(angle) * car.max_vel;
     }
 
     void checkTargetStatus() {
