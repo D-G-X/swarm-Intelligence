@@ -20,6 +20,8 @@ public class Simulation extends JFrame {
     Canvas myCanvas; // The Canvas (die Leinwand)
     final int WIDTH = 1475;
     final int HEIGHT = 925;
+    final int WORLD_MARGIN = 10;
+    final int WORLD_BORDER_WIDTH = 3;
     static int sleep = 8; // delay in frame
     static double pix = 0.3; // the scaling factor
     double[] currentTarget = null;
@@ -105,6 +107,9 @@ public class Simulation extends JFrame {
 
         myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
 
+        myCanvas.setWorld_margin(WORLD_MARGIN);
+        myCanvas.setWorld_border_thickness(WORLD_BORDER_WIDTH);
+
         add(myCanvas);
 
         setSize(WIDTH, HEIGHT);
@@ -115,16 +120,16 @@ public class Simulation extends JFrame {
 
         myCanvas.updateTarget(currentTarget, isConsuming);
 
-        new Timer(sleep, e -> {
-            checkTargetStatus();
-            myCanvas.updateTarget(currentTarget, isConsuming);
-
-            for (Vehicle v : allVehicles) {
-                v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
-            }
-
-            repaint();
-        }).start();
+//        new Timer(sleep, e -> {
+//            checkTargetStatus();
+//            myCanvas.updateTarget(currentTarget, isConsuming);
+//
+//            for (Vehicle v : allVehicles) {
+//                v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
+//            }
+//
+//            repaint();
+//        }).start();
     }
 
     void spawnNextTarget() {

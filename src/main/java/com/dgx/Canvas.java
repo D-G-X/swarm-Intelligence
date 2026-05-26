@@ -17,6 +17,9 @@ public class Canvas extends JPanel {
     double[] currentTarget;
     boolean isConsuming;
 
+    private int world_margin;
+    private int world_border_thickness;
+
     double[] canvas_dimensions = new double[2];
 
     Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, int width, int height) {
@@ -77,21 +80,21 @@ public class Canvas extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
 
         // 1. Draw the World Border (Matches vehicle physical boundaries)
-        int minPixelX = (int)(10 / pix);
-        int minPixelY = (int)(10 / pix);
+        int minPixelX = (int)(world_margin / pix);
+        int minPixelY = (int)(world_margin / pix);
         int maxPixelX = (int)(canvas_dimensions[0] * Simulation.pix / pix);
         int maxPixelY = (int)(canvas_dimensions[1] * Simulation.pix / pix);
 
         int borderWidth = maxPixelX - minPixelX;
         int borderHeight = maxPixelY - minPixelY;
 
-        // Draw a light gray filled background for the active simulation zone (Optional)
+        // Draw a light gray filled background for the active simulation zone
         g2d.setColor(new Color(245, 245, 245));
         g2d.fillRect(minPixelX, minPixelY, borderWidth, borderHeight);
 
         // Draw a thick dark border line
         g2d.setColor(Color.DARK_GRAY);
-        g2d.setStroke(new java.awt.BasicStroke(3)); // Gives the line some weight
+        g2d.setStroke(new java.awt.BasicStroke(world_border_thickness)); // Gives the line some weight
         g2d.drawRect(minPixelX, minPixelY, borderWidth, borderHeight);
 
         // Reset stroke back to default so other elements draw normally
@@ -129,5 +132,21 @@ public class Canvas extends JPanel {
             g2d.setColor(Color.BLACK);
             g2d.draw(q);
         }
+    }
+
+    public int getWorld_border_thickness() {
+        return world_border_thickness;
+    }
+
+    public void setWorld_border_thickness(int world_border_thickness) {
+        this.world_border_thickness = world_border_thickness;
+    }
+
+    public int getWorld_margin() {
+        return world_margin;
+    }
+
+    public void setWorld_margin(int world_margin) {
+        this.world_margin = world_margin;
     }
 }
