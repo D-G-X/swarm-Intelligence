@@ -21,7 +21,7 @@ public class Simulation extends JFrame {
     boolean isDispersing = false; // state when the vehicles are done consuming the target
     long consumptionStartTime = 0; // timer after when the vehicles start consume the target
     long dispersalStartTime = 0; // timer for the dispersion of the vehicle
-    double targetDetectionRadius = 5.0; // radius used to detect the target
+    double targetDetectionRadius = 15.0; // radius used to detect the target
 
     Canvas myCanvas; // The Canvas (die Leinwand)
     final int WIDTH = 1475;
