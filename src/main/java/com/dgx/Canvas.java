@@ -340,8 +340,17 @@ public class Canvas extends JPanel {
                 double r = bh.getHole_radius() / pix;
 
                 Graphics2D bhG = (Graphics2D) g2d.create();
-                bhG.setColor(Color.BLACK);
-                bhG.fillOval((int)(cx - r), (int)(cy - r), (int)(r * 2), (int)(r * 2));
+                java.awt.geom.Ellipse2D holeShape = new java.awt.geom.Ellipse2D.Double(cx - r, cy - r, r * 2.0, r * 2.0);
+                bhG.setPaint(new java.awt.RadialGradientPaint(
+                        new java.awt.geom.Point2D.Double(cx, cy),
+                        (float) r,
+                    new float[]{0.0f, 0.45f, 1.0f},
+                    new Color[]{Color.BLACK, new Color(55, 55, 55), new Color(130, 130, 130)}
+                ));
+                bhG.fill(holeShape);
+
+                bhG.setColor(new Color(170, 170, 170, 180));
+                bhG.draw(holeShape);
 
                 // Draw name centered inside the black hole (reduced size)
                 String name = bh.getHole_name();
