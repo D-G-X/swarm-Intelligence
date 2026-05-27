@@ -1,0 +1,6 @@
+5
+60 180 60 Schwarzes_Loch-A
+469 270 60 Schwarzes_Loch-B
+220 10 60 Schwarzes_Loch-C
+528 221 60 Schwarzes_Loch-D
+225 100 60 Schwarzes_Loch-E
