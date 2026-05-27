@@ -68,6 +68,7 @@ public class Simulation extends JFrame {
                     double parsedY = Integer.parseInt(parts[1]);
                     double obs_width = Double.parseDouble(parts[2]);
                     double obs_height = Double.parseDouble(parts[3]);
+                    String obs_name = parts[4];
 
                     // 2. Define your new centered world boundary thresholds for 1500x1500px window
                     double maxX = WIDTH - obs_width;
@@ -76,7 +77,7 @@ public class Simulation extends JFrame {
                     obs_pos[0] = Math.max(WORLD_MARGIN, Math.min(parsedX, maxX));
                     obs_pos[1] = Math.max(WORLD_MARGIN, Math.min(parsedY, maxY));
 
-                    allObstacles.add(new Obstacle(obs_pos, obs_width, obs_height));
+                    allObstacles.add(new Obstacle(obs_pos, obs_width, obs_height, obs_name));
                 }
 
 

@@ -248,6 +248,28 @@ public class Canvas extends JPanel {
             g2d.fill(roundedBox);
             g2d.draw(roundedBox);
 
+            String obstacleName = obs.getObstacle_name();
+            if (obstacleName != null && !obstacleName.isBlank()) {
+                Graphics2D labelGraphics = (Graphics2D) g2d.create();
+                labelGraphics.setColor(new Color(90, 60, 0));
+
+                double maxFontSize = Math.max(10.0, Math.min(18.0, h * 0.35));
+                labelGraphics.setFont(labelGraphics.getFont().deriveFont(java.awt.Font.BOLD, (float) maxFontSize));
+                java.awt.FontMetrics metrics = labelGraphics.getFontMetrics();
+
+                String labelText = obstacleName;
+                while (metrics.stringWidth(labelText) > (w - 8.0) && labelText.length() > 1) {
+                    labelText = labelText.substring(0, labelText.length() - 1);
+                }
+
+                int textWidth = metrics.stringWidth(labelText);
+                int textHeight = metrics.getAscent() - metrics.getDescent();
+                float textX = (float) (x + (w - textWidth) / 2.0);
+                float textY = (float) (y + (h + textHeight) / 2.0);
+                labelGraphics.drawString(labelText, textX, textY);
+                labelGraphics.dispose();
+            }
+
             if (showObstacleRadius) {
                 double centerX = x + (w / 2.0);
                 double centerY = y + (h / 2.0);
