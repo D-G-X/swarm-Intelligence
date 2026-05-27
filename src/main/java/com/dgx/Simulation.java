@@ -41,6 +41,7 @@ public class Simulation extends JFrame {
 
     ArrayList<Vehicle> allVehicles = new ArrayList<>(); // Array of vehicles
     ArrayList<Obstacle> allObstacles = new ArrayList<>(); // Array of Obstacles
+    ArrayList<BlackHole> allBlackHoles = new ArrayList<>(); // Array of Black Holes
 
     Simulation() {
         setTitle("Die Schwarmintelligenz");
@@ -100,6 +101,41 @@ public class Simulation extends JFrame {
 
         System.out.println("\nObstacles Generated");
 
+        // Extract Black Holes
+        System.out.println("Extracting Black Holes Positions");
+        try{
+            InputStream bhInput = getClass().getClassLoader().getResourceAsStream("blackholes.txt");
+            if (bhInput != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(bhInput));
+                int numBH = Integer.parseInt(reader.readLine());
+                System.out.println("Number of BlackHoles: "+numBH);
+                for (int i = 0; i < numBH; i++) {
+                    double[] bh_pos = new double[2];
+                    String line = reader.readLine();
+                    String[] parts = line.split(" ");
+                    double parsedX = Integer.parseInt(parts[0]);
+                    double parsedY = Integer.parseInt(parts[1]);
+                    double bh_radius = Double.parseDouble(parts[2]);
+                    String bh_name = parts.length > 3 ? parts[3] : "";
+
+                    double maxX = WIDTH;
+                    double maxY = HEIGHT;
+
+                    bh_pos[0] = Math.max(WORLD_MARGIN, Math.min(parsedX, maxX));
+                    bh_pos[1] = Math.max(WORLD_MARGIN, Math.min(parsedY, maxY));
+
+                    allBlackHoles.add(new BlackHole(bh_pos, bh_radius, bh_name));
+                }
+                reader.close();
+                System.out.println("Black Holes Position Extracted");
+            } else {
+                System.out.println("No text file for blackholes found!");
+            }
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         System.out.println("Generating Vehicles");
 
         for (int k = 0; k < anzFz; k++) {
@@ -111,7 +147,7 @@ public class Simulation extends JFrame {
 
         System.out.println("Vehicles Generated");
 
-        myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
+        myCanvas = new Canvas(allVehicles, pix, allObstacles, allBlackHoles, WIDTH, HEIGHT);
 
         myCanvas.setWorld_margin(WORLD_MARGIN);
         myCanvas.setWorld_border_thickness(WORLD_BORDER_WIDTH);

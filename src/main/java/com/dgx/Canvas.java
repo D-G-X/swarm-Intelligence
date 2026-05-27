@@ -12,6 +12,7 @@ public class Canvas extends JPanel {
     ArrayList<Vehicle> allVehicles;
     double pix;
     ArrayList<Obstacle> allObstacles;
+    ArrayList<BlackHole> allBlackHoles;
 
     // New fields to track the target state
     double[] currentTarget;
@@ -29,10 +30,11 @@ public class Canvas extends JPanel {
 
     double[] canvas_dimensions = new double[2];
 
-    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, int width, int height) {
+    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, ArrayList<BlackHole> blackHoles, int width, int height) {
         this.allVehicles = allVehicles;
         this.pix = pix;
         this.allObstacles = obstacles;
+        this.allBlackHoles = blackHoles;
         this.setBackground(Color.lightGray);
         this.canvas_dimensions[0] = width;
         this.canvas_dimensions[1] = height;
@@ -327,6 +329,34 @@ public class Canvas extends JPanel {
                         diameterPx
                 ));
                 radiusGraphics.dispose();
+            }
+        }
+
+        // 5. Paint Black Holes
+        if (allBlackHoles != null) {
+            for (BlackHole bh : allBlackHoles) {
+                double cx = bh.position[0] / pix;
+                double cy = bh.position[1] / pix;
+                double r = bh.getHole_radius() / pix;
+
+                Graphics2D bhG = (Graphics2D) g2d.create();
+                bhG.setColor(Color.BLACK);
+                bhG.fillOval((int)(cx - r), (int)(cy - r), (int)(r * 2), (int)(r * 2));
+
+                // Draw name centered inside the black hole (reduced size)
+                String name = bh.getHole_name();
+                if (name != null && !name.isBlank()) {
+                    float fontSize = Math.max(8f, (float)(r * 0.25));
+                    bhG.setFont(bhG.getFont().deriveFont(java.awt.Font.BOLD, fontSize));
+                    java.awt.FontMetrics fm = bhG.getFontMetrics();
+                    int w = fm.stringWidth(name);
+                    bhG.setColor(Color.WHITE);
+                    float textX = (float)(cx - w / 2.0);
+                    float textY = (float)(cy + (fm.getAscent() - fm.getDescent()) / 2.0);
+                    bhG.drawString(name, textX, textY);
+                }
+
+                bhG.dispose();
             }
         }
     }
