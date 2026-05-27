@@ -1,8 +1,8 @@
 # SwarmSimulation
 
-SwarmSimulation is a Java Swing project that simulates a swarm of autonomous vehicles navigating a 2D arena with static rectangular obstacles and dynamic targets.
+SwarmSimulation is a Java Swing project that simulates a swarm of autonomous vehicles navigating a 2D arena with static rectangular obstacles, black holes, and dynamic targets.
 
-![SwarmSimulation v2](v2_0.png)
+![SwarmSimulation v2.1](v2_0.png)
 
 ## Features
 
@@ -17,6 +17,14 @@ SwarmSimulation is a Java Swing project that simulates a swarm of autonomous veh
 - **Target spawning** places a new target in the world bounds while avoiding obstacle rectangles.
 - **Consumption** starts when a vehicle reaches the target area.
 - **Dispersal** briefly randomizes movement after a target is consumed so the swarm does not clump.
+- **Target timer** tracks how long the swarm needs to find a target and stores the last capture time.
+
+### Black Holes
+
+- **Black hole spawning** loads circular black holes from `src/main/resources/blackholes.txt`.
+- **Black hole rendering** draws each hole with a dark radial gradient and a centered label.
+- **Black hole radius overlay** can draw a dashed radius outline around each black hole.
+- **Target spawn protection** prevents targets from spawning too close to any black hole.
 
 ### Obstacle Handling
 
@@ -35,12 +43,14 @@ The bottom control panel now uses a compact 2-row x 5-column layout so the contr
 - **AvoidMult**: changes how strongly vehicles push away when near obstacles.
 - **ObsWeight**: changes how much obstacle avoidance influences the final steering decision.
 - **Show obstacle radius**: toggles the dashed black radius visualization around each obstacle.
+- **Show black hole radius**: toggles the dashed radius visualization around each black hole.
 - **Avoidance multiplier vs. obstacle weight**: the multiplier changes the strength of the repulsive push once an obstacle is sensed, while the obstacle weight controls how much that repulsive force counts compared with cohesion, separation, and alignment.
 
 ### Target / Detection Controls
 
 - **Target DetectRadius**: controls the radius used to decide when the swarm has "detected" a target (used by the nearest vehicle). This updates at runtime.
 - **Show target radius**: toggle to draw a dashed circle around the current target showing the detection radius.
+- **Show timer**: toggles the target search timer display below the spawn point.
 
 ### Swarm Weight Controls
 
@@ -67,6 +77,7 @@ The bottom control panel now uses a compact 2-row x 5-column layout so the contr
 - `src/main/java/com/dgx/Canvas.java`: renders vehicles, obstacles, targets, overlays, and debug visualizations.
 - `src/main/java/com/dgx/Vehicle.java`: vehicle movement, steering, obstacle avoidance, and swarm logic.
 - `src/main/java/com/dgx/Obstacle.java`: rectangular obstacle model.
+- `src/main/java/com/dgx/BlackHole.java`: circular black hole model.
 - `src/main/java/com/dgx/VectorCalculation.java`: helper methods for 2D vector math.
 
 ## Requirements
@@ -86,5 +97,5 @@ java -cp target/classes com.dgx.Simulation
 ## Notes
 
 - The simulation uses `pix` as a world-to-screen scaling factor.
-- Targets are spawned within the active arena and rejected if they overlap an obstacle.
+- Targets are spawned within the active arena and rejected if they overlap an obstacle or fall too close to a black hole.
 - The controls are arranged in two rows of five tiles to keep the panel compact.

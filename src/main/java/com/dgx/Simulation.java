@@ -41,6 +41,7 @@ public class Simulation extends JFrame {
 
     ArrayList<Vehicle> allVehicles = new ArrayList<>(); // Array of vehicles
     ArrayList<Obstacle> allObstacles = new ArrayList<>(); // Array of Obstacles
+    ArrayList<BlackHole> allBlackHoles = new ArrayList<>(); // Array of Black Holes
 
     Simulation() {
         setTitle("Die Schwarmintelligenz");
@@ -100,6 +101,41 @@ public class Simulation extends JFrame {
 
         System.out.println("\nObstacles Generated");
 
+        // Extract Black Holes
+        System.out.println("Extracting Black Holes Positions");
+        try{
+            InputStream bhInput = getClass().getClassLoader().getResourceAsStream("blackholes.txt");
+            if (bhInput != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(bhInput));
+                int numBH = Integer.parseInt(reader.readLine());
+                System.out.println("Number of BlackHoles: "+numBH);
+                for (int i = 0; i < numBH; i++) {
+                    double[] bh_pos = new double[2];
+                    String line = reader.readLine();
+                    String[] parts = line.split(" ");
+                    double parsedX = Integer.parseInt(parts[0]);
+                    double parsedY = Integer.parseInt(parts[1]);
+                    double bh_radius = Double.parseDouble(parts[2]);
+                    String bh_name = parts.length > 3 ? parts[3] : "";
+
+                    double maxX = WIDTH;
+                    double maxY = HEIGHT;
+
+                    bh_pos[0] = Math.max(WORLD_MARGIN, Math.min(parsedX, maxX));
+                    bh_pos[1] = Math.max(WORLD_MARGIN, Math.min(parsedY, maxY));
+
+                    allBlackHoles.add(new BlackHole(bh_pos, bh_radius, bh_name));
+                }
+                reader.close();
+                System.out.println("Black Holes Position Extracted");
+            } else {
+                System.out.println("No text file for blackholes found!");
+            }
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         System.out.println("Generating Vehicles");
 
         for (int k = 0; k < anzFz; k++) {
@@ -111,7 +147,7 @@ public class Simulation extends JFrame {
 
         System.out.println("Vehicles Generated");
 
-        myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
+        myCanvas = new Canvas(allVehicles, pix, allObstacles, allBlackHoles, WIDTH, HEIGHT);
 
         myCanvas.setWorld_margin(WORLD_MARGIN);
         myCanvas.setWorld_border_thickness(WORLD_BORDER_WIDTH);
@@ -219,7 +255,7 @@ public class Simulation extends JFrame {
         sliderDetect.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 targetDetectionRadius = sliderDetect.getValue();
-                lblDetect.setText("DetectRadius: " + String.format("%.1f", targetDetectionRadius));
+                lblDetect.setText("Target DetectRadius: " + String.format("%.1f", targetDetectionRadius));
                 myCanvas.repaint();
             }
         });
@@ -236,7 +272,18 @@ public class Simulation extends JFrame {
         toggleTile.add(chkRadius, BorderLayout.CENTER);
         controlPanel.add(toggleTile);
 
-        // 9) Toggle target detection radius visualization + show type1 circles
+        // 9) Toggle black hole radius visualization
+        JCheckBox chkBlackHoleRadius = new JCheckBox("Show black hole radius", false);
+        chkBlackHoleRadius.addActionListener(e -> {
+            myCanvas.setShowBlackHoleRadius(chkBlackHoleRadius.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel blackHoleToggleTile = new JPanel(new BorderLayout(4, 4));
+        blackHoleToggleTile.add(new JLabel("Toggle Black Hole Radius"), BorderLayout.NORTH);
+        blackHoleToggleTile.add(chkBlackHoleRadius, BorderLayout.CENTER);
+        controlPanel.add(blackHoleToggleTile);
+
+        // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
             myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
@@ -258,7 +305,7 @@ public class Simulation extends JFrame {
         targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
         controlPanel.add(targetToggleTile);
 
-        // 10) Manual target regeneration button
+        // 11) Manual target regeneration button
         JButton btnNewTarget = new JButton("New Target");
         btnNewTarget.addActionListener(e -> {
             isDispersing = false;
@@ -341,6 +388,14 @@ public class Simulation extends JFrame {
                 }
             }
 
+            // 3. Keep the target out of black hole gravity zones plus a 20 unit safety buffer
+            for (BlackHole bh : allBlackHoles) {
+                if (isInsideBlackHoleBuffer(currentTarget, bh, 20.0)) {
+                    invalidLocation = true;
+                    break;
+                }
+            }
+
             if (attempts > 100) break;
 
         } while (invalidLocation);
@@ -348,6 +403,13 @@ public class Simulation extends JFrame {
         System.out.println("New Target Position:\t"+currentTarget[0]+","+currentTarget[1]);
 
         isConsuming = false;
+    }
+
+    private boolean isInsideBlackHoleBuffer(double[] target, BlackHole blackHole, double extraBuffer) {
+        double dx = target[0] - blackHole.position[0];
+        double dy = target[1] - blackHole.position[1];
+        double radius = blackHole.getHole_radius() + extraBuffer;
+        return (dx * dx) + (dy * dy) <= radius * radius;
     }
 
     private void placeVehicleInSpawnCircle(Vehicle car) {
