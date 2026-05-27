@@ -272,7 +272,18 @@ public class Simulation extends JFrame {
         toggleTile.add(chkRadius, BorderLayout.CENTER);
         controlPanel.add(toggleTile);
 
-        // 9) Toggle target detection radius visualization + show type1 circles
+        // 9) Toggle black hole radius visualization
+        JCheckBox chkBlackHoleRadius = new JCheckBox("Show black hole radius", false);
+        chkBlackHoleRadius.addActionListener(e -> {
+            myCanvas.setShowBlackHoleRadius(chkBlackHoleRadius.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel blackHoleToggleTile = new JPanel(new BorderLayout(4, 4));
+        blackHoleToggleTile.add(new JLabel("Toggle Black Hole Radius"), BorderLayout.NORTH);
+        blackHoleToggleTile.add(chkBlackHoleRadius, BorderLayout.CENTER);
+        controlPanel.add(blackHoleToggleTile);
+
+        // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
             myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
@@ -294,7 +305,7 @@ public class Simulation extends JFrame {
         targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
         controlPanel.add(targetToggleTile);
 
-        // 10) Manual target regeneration button
+        // 11) Manual target regeneration button
         JButton btnNewTarget = new JButton("New Target");
         btnNewTarget.addActionListener(e -> {
             isDispersing = false;
@@ -377,6 +388,14 @@ public class Simulation extends JFrame {
                 }
             }
 
+            // 3. Keep the target out of black hole gravity zones plus a 20 unit safety buffer
+            for (BlackHole bh : allBlackHoles) {
+                if (isInsideBlackHoleBuffer(currentTarget, bh, 20.0)) {
+                    invalidLocation = true;
+                    break;
+                }
+            }
+
             if (attempts > 100) break;
 
         } while (invalidLocation);
@@ -384,6 +403,13 @@ public class Simulation extends JFrame {
         System.out.println("New Target Position:\t"+currentTarget[0]+","+currentTarget[1]);
 
         isConsuming = false;
+    }
+
+    private boolean isInsideBlackHoleBuffer(double[] target, BlackHole blackHole, double extraBuffer) {
+        double dx = target[0] - blackHole.position[0];
+        double dy = target[1] - blackHole.position[1];
+        double radius = blackHole.getHole_radius() + extraBuffer;
+        return (dx * dx) + (dy * dy) <= radius * radius;
     }
 
     private void placeVehicleInSpawnCircle(Vehicle car) {

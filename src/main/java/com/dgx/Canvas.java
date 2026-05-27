@@ -18,6 +18,7 @@ public class Canvas extends JPanel {
     double[] currentTarget;
     boolean isConsuming;
     boolean showObstacleRadius;
+    boolean showBlackHoleRadius;
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
     boolean showType1Circle;
@@ -52,6 +53,10 @@ public class Canvas extends JPanel {
 
     public void setShowObstacleRadius(boolean showObstacleRadius) {
         this.showObstacleRadius = showObstacleRadius;
+    }
+
+    public void setShowBlackHoleRadius(boolean showBlackHoleRadius) {
+        this.showBlackHoleRadius = showBlackHoleRadius;
     }
 
     public void setShowTargetDetectionRadius(boolean showTargetDetectionRadius) {
@@ -351,6 +356,31 @@ public class Canvas extends JPanel {
 
                 bhG.setColor(new Color(170, 170, 170, 180));
                 bhG.draw(holeShape);
+
+                if (showBlackHoleRadius) {
+                    double radiusWorld = bh.getHole_radius() + 20.0;
+                    double radiusPx = radiusWorld / pix;
+                    double diameterPx = radiusPx * 2.0;
+
+                    Graphics2D radiusGraphics = (Graphics2D) bhG.create();
+                    float[] dashPattern = {8.0f, 8.0f};
+                    radiusGraphics.setColor(new Color(0, 0, 0, 180));
+                    radiusGraphics.setStroke(new java.awt.BasicStroke(
+                        1.5f,
+                        java.awt.BasicStroke.CAP_BUTT,
+                        java.awt.BasicStroke.JOIN_MITER,
+                        10.0f,
+                        dashPattern,
+                        0.0f
+                    ));
+                    radiusGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+                        cx - radiusPx,
+                        cy - radiusPx,
+                        diameterPx,
+                        diameterPx
+                    ));
+                    radiusGraphics.dispose();
+                }
 
                 // Draw name centered inside the black hole (reduced size)
                 String name = bh.getHole_name();
