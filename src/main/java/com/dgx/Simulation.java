@@ -255,7 +255,7 @@ public class Simulation extends JFrame {
         sliderDetect.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 targetDetectionRadius = sliderDetect.getValue();
-                lblDetect.setText("DetectRadius: " + String.format("%.1f", targetDetectionRadius));
+                lblDetect.setText("Target DetectRadius: " + String.format("%.1f", targetDetectionRadius));
                 myCanvas.repaint();
             }
         });
