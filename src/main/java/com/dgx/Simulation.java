@@ -24,6 +24,9 @@ public class Simulation extends JFrame {
     long consumptionStartTime = 0; // timer after when the vehicles start consume the target
     long dispersalStartTime = 0; // timer for the dispersion of the vehicle
     double targetDetectionRadius = 15.0; // radius used to detect the target
+    long targetSearchStartTime = 0; // time when the current target spawned
+    long targetSearchElapsedMillis = 0; // live search timer for the current target
+    long lastCaptureMillis = -1; // last time the swarm took to find a target
 
     Canvas myCanvas; // The Canvas (die Leinwand)
     static final int WIDTH = 1475;
@@ -260,7 +263,7 @@ public class Simulation extends JFrame {
         btnNewTarget.addActionListener(e -> {
             isDispersing = false;
             spawnNextTarget();
-            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
+            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
             myCanvas.repaint();
         });
         JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
@@ -284,11 +287,11 @@ public class Simulation extends JFrame {
 
         spawnNextTarget();
 
-        myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
+        myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
 
         new Timer(sleep, e -> {
             checkTargetStatus();
-            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius);
+            myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
 
             for (Vehicle v : allVehicles) {
                 v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
@@ -300,6 +303,8 @@ public class Simulation extends JFrame {
 
     void spawnNextTarget() {
         currentTarget = new double[2];
+        targetSearchStartTime = System.currentTimeMillis();
+        targetSearchElapsedMillis = 0;
         boolean invalidLocation;
         int attempts = 0;
 
@@ -392,6 +397,12 @@ public class Simulation extends JFrame {
         if (currentTarget == null) return;
 
         if (!isConsuming) {
+            targetSearchElapsedMillis = System.currentTimeMillis() - targetSearchStartTime;
+        } else {
+            targetSearchElapsedMillis = 0;
+        }
+
+        if (!isConsuming) {
             // If we are currently dispersing, check if 2 seconds have passed to stop
             if (isDispersing && System.currentTimeMillis() - dispersalStartTime > 2000) {
                 isDispersing = false;
@@ -406,6 +417,8 @@ public class Simulation extends JFrame {
 
             if (nearestDistance < targetDetectionRadius) {
                 isConsuming = true;
+                lastCaptureMillis = targetSearchElapsedMillis;
+                targetSearchElapsedMillis = 0;
                 consumptionStartTime = System.currentTimeMillis();
             }
         } else {

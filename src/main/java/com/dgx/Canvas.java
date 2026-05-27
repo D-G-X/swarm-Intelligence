@@ -20,6 +20,9 @@ public class Canvas extends JPanel {
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
     boolean showType1Circle;
+    boolean showTimer;
+    long targetSearchElapsedMillis;
+    long lastCaptureMillis;
 
     private int world_margin;
     private int world_border_thickness;
@@ -37,10 +40,12 @@ public class Canvas extends JPanel {
     }
 
     // Method to update target data from the Simulation loop
-    public void updateTarget(double[] target, boolean consuming, double targetDetectionRadius) {
+    public void updateTarget(double[] target, boolean consuming, double targetDetectionRadius, long targetSearchElapsedMillis, long lastCaptureMillis) {
         this.currentTarget = target;
         this.isConsuming = consuming;
         this.targetDetectionRadius = targetDetectionRadius;
+        this.targetSearchElapsedMillis = targetSearchElapsedMillis;
+        this.lastCaptureMillis = lastCaptureMillis;
     }
 
     public void setShowObstacleRadius(boolean showObstacleRadius) {
@@ -53,6 +58,10 @@ public class Canvas extends JPanel {
 
     public void setShowType1Circle(boolean showType1Circle) {
         this.showType1Circle = showType1Circle;
+    }
+
+    public void setShowTimer(boolean showTimer) {
+        this.showTimer = showTimer;
     }
 
     public Polygon kfzInPolygon(Vehicle fz) {
@@ -151,6 +160,29 @@ public class Canvas extends JPanel {
             (float)(spawnCenterPxX - bottomLabelWidth / 2.0),
             (float)(spawnCenterPxY + labelAscent + lineGap)
         );
+
+        if (showTimer) {
+            spawnGraphics.setFont(spawnGraphics.getFont().deriveFont(java.awt.Font.BOLD, 13.0f));
+            java.awt.FontMetrics timerMetrics = spawnGraphics.getFontMetrics();
+            String searchText = String.format("Search time: %.1f s", targetSearchElapsedMillis / 1000.0);
+            String captureText = lastCaptureMillis >= 0
+                ? String.format("Last capture: %.1f s", lastCaptureMillis / 1000.0)
+                : "Last capture: --";
+            int searchTextWidth = timerMetrics.stringWidth(searchText);
+            int captureTextWidth = timerMetrics.stringWidth(captureText);
+            int timerWidth = Math.max(searchTextWidth, captureTextWidth) + 18;
+            int timerHeight = timerMetrics.getHeight() * 2 + 10;
+            int timerX = (int)(spawnCenterPxX - timerWidth / 2.0);
+            int timerY = (int)(spawnCenterPxY + spawnRadiusPx + 8.0);
+
+            spawnGraphics.setColor(new Color(255, 255, 255, 210));
+            spawnGraphics.fillRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
+            spawnGraphics.setColor(new Color(70, 70, 70));
+            spawnGraphics.drawRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
+            spawnGraphics.setColor(Color.BLACK);
+            spawnGraphics.drawString(searchText, timerX + 9, timerY + timerMetrics.getAscent() + 2);
+            spawnGraphics.drawString(captureText, timerX + 9, timerY + timerMetrics.getAscent() + timerMetrics.getHeight() + 2);
+        }
         spawnGraphics.dispose();
 
         // 2. Paint spawnability overlay (green = allowed, red = blocked)
