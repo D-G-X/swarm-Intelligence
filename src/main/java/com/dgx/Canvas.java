@@ -16,19 +16,52 @@ public class Canvas extends JPanel {
     // New fields to track the target state
     double[] currentTarget;
     boolean isConsuming;
+    boolean showObstacleRadius;
+    boolean showTargetDetectionRadius;
+    double targetDetectionRadius;
+    boolean showType1Circle;
+    boolean showTimer;
+    long targetSearchElapsedMillis;
+    long lastCaptureMillis;
 
-    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles) {
+    private int world_margin;
+    private int world_border_thickness;
+
+    double[] canvas_dimensions = new double[2];
+
+    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, int width, int height) {
         this.allVehicles = allVehicles;
         this.pix = pix;
         this.allObstacles = obstacles;
-        this.setBackground(Color.WHITE);
-        setSize(800, 800);
+        this.setBackground(Color.lightGray);
+        this.canvas_dimensions[0] = width;
+        this.canvas_dimensions[1] = height;
+        setSize(width, height);
     }
 
     // Method to update target data from the Simulation loop
-    public void updateTarget(double[] target, boolean consuming) {
+    public void updateTarget(double[] target, boolean consuming, double targetDetectionRadius, long targetSearchElapsedMillis, long lastCaptureMillis) {
         this.currentTarget = target;
         this.isConsuming = consuming;
+        this.targetDetectionRadius = targetDetectionRadius;
+        this.targetSearchElapsedMillis = targetSearchElapsedMillis;
+        this.lastCaptureMillis = lastCaptureMillis;
+    }
+
+    public void setShowObstacleRadius(boolean showObstacleRadius) {
+        this.showObstacleRadius = showObstacleRadius;
+    }
+
+    public void setShowTargetDetectionRadius(boolean showTargetDetectionRadius) {
+        this.showTargetDetectionRadius = showTargetDetectionRadius;
+    }
+
+    public void setShowType1Circle(boolean showType1Circle) {
+        this.showType1Circle = showType1Circle;
+    }
+
+    public void setShowTimer(boolean showTimer) {
+        this.showTimer = showTimer;
     }
 
     public Polygon kfzInPolygon(Vehicle fz) {
@@ -51,43 +84,177 @@ public class Canvas extends JPanel {
         return q;
     }
 
-    public Polygon kfzInPolygonObs(Obstacle obs) {
-        Polygon q = new Polygon();
-        int halfW = (int)((obs.getObstacle_width() / 2) / pix);
-        int halfH = (int)((obs.getObstacle_height() / 2) / pix);
-        int x = (int)(obs.position[0] / pix);
-        int y = (int)(obs.position[1] / pix);
-
-        q.addPoint(x + halfW, y + halfH);
-        q.addPoint(x - halfW, y + halfH);
-        q.addPoint(x - halfW, y - halfH);
-        q.addPoint(x + halfW, y - halfH);
-        return q;
-    }
-
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // 1. Paint Target
+        // 1. Draw the World Border (Matches vehicle physical boundaries)
+        int minPixelX = (int)(world_margin / pix);
+        int minPixelY = (int)(world_margin / pix);
+        int maxPixelX = (int)(canvas_dimensions[0] * Simulation.pix / pix);
+        int maxPixelY = (int)(canvas_dimensions[1] * Simulation.pix / pix);
+
+        int borderWidth = maxPixelX - minPixelX;
+        int borderHeight = maxPixelY - minPixelY;
+
+        // Choose how round you want the outer arena to look (e.g., 30 pixels)
+        double worldCornerRounding = 30.0;
+
+        // Create a rounded rectangle for the global boundary area
+        java.awt.geom.RoundRectangle2D roundedWorld = new java.awt.geom.RoundRectangle2D.Double(
+                minPixelX, minPixelY, borderWidth, borderHeight, worldCornerRounding, worldCornerRounding
+        );
+
+        // Draw a soft light-gray filled background inside the active simulation zone
+        g2d.setColor(new Color(245, 245, 245));
+        g2d.fill(roundedWorld);
+
+        // Draw the thick dark frame line
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.setStroke(new java.awt.BasicStroke(world_border_thickness));
+        g2d.draw(roundedWorld);
+
+        // 1b. Paint the initial vehicle spawn circle in the top-right corner.
+        double spawnRadiusWorld = Simulation.SPAWN_POINT_RADIUS;
+        double spawnCenterWorldX = (canvas_dimensions[0] * Simulation.pix) - world_margin - spawnRadiusWorld;
+        double spawnCenterWorldY = world_margin + spawnRadiusWorld;
+        double spawnRadiusPx = spawnRadiusWorld / pix;
+        double spawnCenterPxX = spawnCenterWorldX / pix;
+        double spawnCenterPxY = spawnCenterWorldY / pix;
+
+        Graphics2D spawnGraphics = (Graphics2D) g2d.create();
+        float[] spawnDashPattern = {4.0f, 6.0f};
+        spawnGraphics.setColor(new Color(220, 0, 0));
+        spawnGraphics.setStroke(new java.awt.BasicStroke(
+            1.6f,
+            java.awt.BasicStroke.CAP_BUTT,
+            java.awt.BasicStroke.JOIN_MITER,
+            10.0f,
+            spawnDashPattern,
+            0.0f
+        ));
+        spawnGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+            spawnCenterPxX - spawnRadiusPx,
+            spawnCenterPxY - spawnRadiusPx,
+            spawnRadiusPx * 2.0,
+            spawnRadiusPx * 2.0
+        ));
+
+        spawnGraphics.setFont(spawnGraphics.getFont().deriveFont(java.awt.Font.BOLD, 12.0f));
+        java.awt.FontMetrics spawnMetrics = spawnGraphics.getFontMetrics();
+        String spawnLabelTop = "SPAWN POINT";
+        String spawnLabelBottom = "(Spawnpunkt)";
+        int topLabelWidth = spawnMetrics.stringWidth(spawnLabelTop);
+        int bottomLabelWidth = spawnMetrics.stringWidth(spawnLabelBottom);
+        int labelAscent = spawnMetrics.getAscent();
+        int lineGap = spawnMetrics.getHeight() - labelAscent;
+        spawnGraphics.setColor(new Color(160, 0, 0));
+        spawnGraphics.drawString(
+            spawnLabelTop,
+            (float)(spawnCenterPxX - topLabelWidth / 2.0),
+            (float)(spawnCenterPxY - 2.0)
+        );
+        spawnGraphics.drawString(
+            spawnLabelBottom,
+            (float)(spawnCenterPxX - bottomLabelWidth / 2.0),
+            (float)(spawnCenterPxY + labelAscent + lineGap)
+        );
+
+        if (showTimer) {
+            spawnGraphics.setFont(spawnGraphics.getFont().deriveFont(java.awt.Font.BOLD, 13.0f));
+            java.awt.FontMetrics timerMetrics = spawnGraphics.getFontMetrics();
+            String searchText = String.format("Search time: %.1f s", targetSearchElapsedMillis / 1000.0);
+            String captureText = lastCaptureMillis >= 0
+                ? String.format("Last capture: %.1f s", lastCaptureMillis / 1000.0)
+                : "Last capture: --";
+            int searchTextWidth = timerMetrics.stringWidth(searchText);
+            int captureTextWidth = timerMetrics.stringWidth(captureText);
+            int timerWidth = Math.max(searchTextWidth, captureTextWidth) + 18;
+            int timerHeight = timerMetrics.getHeight() * 2 + 10;
+            int timerX = (int)(spawnCenterPxX - timerWidth / 2.0);
+            int timerY = (int)(spawnCenterPxY + spawnRadiusPx + 8.0);
+
+            spawnGraphics.setColor(new Color(255, 255, 255, 210));
+            spawnGraphics.fillRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
+            spawnGraphics.setColor(new Color(70, 70, 70));
+            spawnGraphics.drawRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
+            spawnGraphics.setColor(Color.BLACK);
+            spawnGraphics.drawString(searchText, timerX + 9, timerY + timerMetrics.getAscent() + 2);
+            spawnGraphics.drawString(captureText, timerX + 9, timerY + timerMetrics.getAscent() + timerMetrics.getHeight() + 2);
+        }
+        spawnGraphics.dispose();
+
+        // 2. Paint spawnability overlay (green = allowed, red = blocked)
+        Graphics2D overlay = (Graphics2D) g2d.create();
+        int stepPx = 12; // grid cell size in pixels (tune for speed/clarity)
+        double buffer = 5.0; // buffer used when checking obstacle containment (world units)
+        int panelW = getWidth();
+        int panelH = getHeight();
+        for (int px = 0; px < panelW; px += stepPx) {
+            for (int py = 0; py < panelH; py += stepPx) {
+                double worldX = px * pix;
+                double worldY = py * pix;
+                boolean blocked = false;
+                for (Obstacle obs : allObstacles) {
+                    double ox = obs.position[0];
+                    double oy = obs.position[1];
+                    double ow = obs.getObstacle_width();
+                    double oh = obs.getObstacle_height();
+                    boolean insideX = worldX >= (ox - buffer) && worldX <= (ox + ow + buffer);
+                    boolean insideY = worldY >= (oy - buffer) && worldY <= (oy + oh + buffer);
+                    if (insideX && insideY) { blocked = true; break; }
+                }
+                if (blocked) overlay.setColor(new java.awt.Color(255, 0, 0, 40));
+                else overlay.setColor(new java.awt.Color(0, 255, 0, 20));
+                int w = Math.min(stepPx, panelW - px);
+                int h = Math.min(stepPx, panelH - py);
+                overlay.fillRect(px, py, w, h);
+            }
+        }
+        overlay.dispose();
+
+        // 3. Paint Target
         if (currentTarget != null) {
             int tx = (int)(currentTarget[0] / pix);
             int ty = (int)(currentTarget[1] / pix);
-            int size = 10;
+            int size = 20;
 
-            // Set color based on whether the swarm has "found" it
             g2d.setColor(isConsuming ? Color.GREEN : Color.RED);
             g2d.fillOval(tx - size / 2, ty - size / 2, size, size);
+
+            if (showTargetDetectionRadius) {
+                double radiusPx = targetDetectionRadius / pix;
+                double diameterPx = radiusPx * 2.0;
+
+                Graphics2D targetRadiusGraphics = (Graphics2D) g2d.create();
+                float[] dashPattern = {6.0f, 6.0f};
+                targetRadiusGraphics.setColor(new Color(0, 0, 0, 180));
+                targetRadiusGraphics.setStroke(new java.awt.BasicStroke(
+                        1.5f,
+                        java.awt.BasicStroke.CAP_BUTT,
+                        java.awt.BasicStroke.JOIN_MITER,
+                        10.0f,
+                        dashPattern,
+                        0.0f
+                ));
+                targetRadiusGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+                        tx - radiusPx,
+                        ty - radiusPx,
+                        diameterPx,
+                        diameterPx
+                ));
+                targetRadiusGraphics.dispose();
+            }
         }
 
-        // 2. Paint Vehicles
+        // 3. Paint Vehicles
         for (Vehicle fz : allVehicles) {
             Polygon q = kfzInPolygon(fz);
             g2d.setColor(Color.BLACK);
             g2d.draw(q);
 
-            if (fz.type == 1) {
+            if (fz.type == 1 && showType1Circle) {
                 int seite = (int)(fz.rad_zus / pix);
                 g2d.drawOval((int)(fz.pos[0] / pix) - seite, (int)(fz.pos[1] / pix) - seite, 2 * seite, 2 * seite);
                 seite = (int)(fz.rad_sep / pix);
@@ -95,13 +262,88 @@ public class Canvas extends JPanel {
             }
         }
 
-        // 3. Paint Obstacles
+        // 4. Paint Obstacles
         for (Obstacle obs : allObstacles) {
-            Polygon q = kfzInPolygonObs(obs);
-            g2d.setColor(Color.GRAY);
-            g2d.fill(q);
-            g2d.setColor(Color.BLACK);
-            g2d.draw(q);
+            // Scale everything to pixel positions
+            double x = obs.position[0] / pix;
+            double y = obs.position[1] / pix;
+            double w = obs.getObstacle_width() / pix;
+            double h = obs.getObstacle_height() / pix;
+
+            double cornerRounding = 15.0;
+
+            java.awt.geom.RoundRectangle2D roundedBox = new java.awt.geom.RoundRectangle2D.Double(
+                    x, y, w, h, cornerRounding, cornerRounding
+            );
+
+            g2d.setColor(new Color(255, 236, 153));
+            g2d.fill(roundedBox);
+            g2d.draw(roundedBox);
+
+            String obstacleName = obs.getObstacle_name();
+            if (obstacleName != null && !obstacleName.isBlank()) {
+                Graphics2D labelGraphics = (Graphics2D) g2d.create();
+                labelGraphics.setColor(new Color(90, 60, 0));
+
+                double maxFontSize = Math.max(10.0, Math.min(18.0, h * 0.35));
+                labelGraphics.setFont(labelGraphics.getFont().deriveFont(java.awt.Font.BOLD, (float) maxFontSize));
+                java.awt.FontMetrics metrics = labelGraphics.getFontMetrics();
+
+                String labelText = obstacleName;
+                while (metrics.stringWidth(labelText) > (w - 8.0) && labelText.length() > 1) {
+                    labelText = labelText.substring(0, labelText.length() - 1);
+                }
+
+                int textWidth = metrics.stringWidth(labelText);
+                int textHeight = metrics.getAscent() - metrics.getDescent();
+                float textX = (float) (x + (w - textWidth) / 2.0);
+                float textY = (float) (y + (h + textHeight) / 2.0);
+                labelGraphics.drawString(labelText, textX, textY);
+                labelGraphics.dispose();
+            }
+
+            if (showObstacleRadius) {
+                double centerX = x + (w / 2.0);
+                double centerY = y + (h / 2.0);
+                double radiusWorld = Vehicle.BASE_AVOIDANCE_RADIUS + Math.max(obs.getObstacle_width() / 2.0, obs.getObstacle_height() / 2.0);
+                double radiusPx = radiusWorld / pix;
+                double diameterPx = radiusPx * 2.0;
+
+                Graphics2D radiusGraphics = (Graphics2D) g2d.create();
+                float[] dashPattern = {8.0f, 8.0f};
+                radiusGraphics.setColor(Color.BLACK);
+                radiusGraphics.setStroke(new java.awt.BasicStroke(
+                        1.5f,
+                        java.awt.BasicStroke.CAP_BUTT,
+                        java.awt.BasicStroke.JOIN_MITER,
+                        10.0f,
+                        dashPattern,
+                        0.0f
+                ));
+                radiusGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+                        centerX - radiusPx,
+                        centerY - radiusPx,
+                        diameterPx,
+                        diameterPx
+                ));
+                radiusGraphics.dispose();
+            }
         }
+    }
+
+    public int getWorld_border_thickness() {
+        return world_border_thickness;
+    }
+
+    public void setWorld_border_thickness(int world_border_thickness) {
+        this.world_border_thickness = world_border_thickness;
+    }
+
+    public int getWorld_margin() {
+        return world_margin;
+    }
+
+    public void setWorld_margin(int world_margin) {
+        this.world_margin = world_margin;
     }
 }

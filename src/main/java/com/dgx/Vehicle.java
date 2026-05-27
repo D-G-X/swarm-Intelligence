@@ -4,6 +4,13 @@ import java.util.ArrayList;
 
 public class Vehicle {
 	static int allId = 0;
+	// Tunable avoidance constants (adjustable at runtime via UI)
+	public static double BASE_AVOIDANCE_RADIUS = 8.0; // world units
+	public static double AVOIDANCE_MULTIPLIER = 1.2;   // intensity scaling
+	public static double OBS_WEIGHT = 1.0;            // weight used when combining forces
+	public static double F_ZUS_WEIGHT = 0.6;
+	public static double F_SEP_WEIGHT = 1.2;
+	public static double F_AUS_WEIGHT = 0.4;
 	int id; 
 	double rad_sep; 
 	double rad_zus; 
@@ -22,8 +29,8 @@ public class Vehicle {
 	Vehicle() {
 		allId++;
 		this.id = allId;
-		this.FZL = 2;
-		this.FZB = 1;
+		this.FZL = 3;
+		this.FZB = 1.5;
 		this.rad_sep = 5;
 		this.rad_zus = 25;
 		this.max_acc = 0.2;
@@ -177,11 +184,11 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
         double[] acc_dest;
-        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment[cite: 1]
-        double f_zus = 0.05;
-        double f_sep = 0.55;
-        double f_aus = 0.4;
-        double f_obs = 0.8; // High priority to avoid hitting boxes
+        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment
+		double f_zus = F_ZUS_WEIGHT;
+		double f_sep = F_SEP_WEIGHT;
+		double f_aus = F_AUS_WEIGHT;
+		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
         double f_target = 0.3;
 
         double[] acc_cohesion = cohesion(allVehicles);
@@ -203,12 +210,11 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
         // 1. Define all weights
-        double f_zus = 0.05;
-        double f_sep = 0.55;
-        double f_obs = 0.8; // High priority to avoid hitting boxes
-//        double f_target = 0.3;
-        double f_aus = isConsuming ? 0.0 : 0.4; // Stop trying to "flow" together if eating
-        double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
+		double f_zus = F_ZUS_WEIGHT;
+		double f_sep = isConsuming ? 0.0 : F_SEP_WEIGHT;;
+		double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT; // Keep obstacle avoidance strong while consuming
+		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
+		double f_target = isConsuming ? 1.2 : 0.00; // small pre-detection pull, stronger while consuming
 
         // 2. Calculate individual force vectors
         double[] acc_cohesion = cohesion(allVehicles);
@@ -230,7 +236,7 @@ public class Vehicle {
                 (f_obs * acc_obs[1]) +
                 (f_target * acc_seek[1]);
 
-        // 4. Create the final acceleration vector and limit it to max_acc[cite: 1, 2]
+        // 4. Create the final acceleration vector and limit it to max_acc
         double[] acc_dest = new double[]{x, y};
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
@@ -266,9 +272,14 @@ public class Vehicle {
         double[] acc;
 
         if (isDispersing) {
-            // Move randomly: ignore target, high noise/random force
+			// Move randomly, but still avoid obstacles while dispersing
             double[] randomAcc = new double[]{(Math.random() - 0.5), (Math.random() - 0.5)};
-            acc = VectorCalculation.truncate(randomAcc, max_acc);
+			double[] avoidAcc = obstacleAvoidance(obs);
+			double[] disperseAcc = new double[]{
+					randomAcc[0] + (avoidAcc[0] * 1.5),
+					randomAcc[1] + (avoidAcc[1] * 1.5)
+			};
+			acc = VectorCalculation.truncate(disperseAcc, max_acc);
         } else {
             acc = calculateWeightedAcc(allVehicles, obs, target,  isConsuming);
         }
@@ -286,7 +297,7 @@ public class Vehicle {
             }
         }
 
-        // Ensure we don't exceed max_vel, but allow coming to a stop[cite: 1, 2]
+        // Ensure we don't exceed max_vel, but allow coming to a stop
         double currentSpeed = VectorCalculation.length(vel);
         if (currentSpeed > max_vel) {
             vel = VectorCalculation.normalize(vel);
@@ -313,33 +324,63 @@ public class Vehicle {
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
 
+	double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
+		double[] acc_total = new double[2];
+		// Use a short look-ahead so vehicles begin steering before the body reaches the box.
+		double speed = VectorCalculation.length(vel);
+		double lookAheadDistance = Math.max(12.0, speed * 18.0);
+		double[] lookAhead = new double[]{pos[0], pos[1]};
+		if (speed > 1e-8) {
+			double[] forward = VectorCalculation.normalize(vel);
+			lookAhead[0] += forward[0] * lookAheadDistance;
+			lookAhead[1] += forward[1] * lookAheadDistance;
+		}
 
-    double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
-        double[] acc_total = new double[2];
-        // Increase the radius so the vehicle reacts sooner
-        double avoidanceRadius = 30.0;
+		for (Obstacle obs : obstacles) {
+			double ox = obs.position[0];
+			double oy = obs.position[1];
+			double ow = obs.getObstacle_width();
+			double oh = obs.getObstacle_height();
 
-        for (Obstacle obs : obstacles) {
-            double dx = pos[0] - obs.position[0];
-            double dy = pos[1] - obs.position[1];
-            double dist = Math.sqrt(dx * dx + dy * dy);
+			// Closest point on the rectangle to the look-ahead point.
+			double closestX = Math.max(ox, Math.min(lookAhead[0], ox + ow));
+			double closestY = Math.max(oy, Math.min(lookAhead[1], oy + oh));
 
-            // If the vehicle is inside or very close to the radius
-            if (dist < avoidanceRadius) {
-                double[] pushAway = new double[]{dx, dy};
+			double dx = lookAhead[0] - closestX;
+			double dy = lookAhead[1] - closestY;
+			double dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (VectorCalculation.length(pushAway) > 1e-8) {
-                    pushAway = VectorCalculation.normalize(pushAway);
-                }
+			// Sensing radius grows with obstacle size so larger boxes are avoided earlier.
+			double avoidanceRadius = BASE_AVOIDANCE_RADIUS + Math.max(ow, oh) * 0.5;
 
-                // Exponential force: (Radius / Distance)^2 creates a massive push
-                // as the vehicle gets closer to the obstacle
-                double intensity = Math.pow((avoidanceRadius / Math.max(dist, 1.0)), 2);
+			if (dist < avoidanceRadius) {
+				double[] pushAway = new double[]{dx, dy};
 
-                acc_total[0] += pushAway[0] * intensity;
-                acc_total[1] += pushAway[1] * intensity;
-            }
-        }
+				if (VectorCalculation.length(pushAway) > 1e-8) {
+					pushAway = VectorCalculation.normalize(pushAway);
+				} else {
+					// If the look-ahead lands inside the obstacle, push away from the obstacle center.
+					pushAway[0] = lookAhead[0] - (ox + ow / 2.0);
+					pushAway[1] = lookAhead[1] - (oy + oh / 2.0);
+					if (VectorCalculation.length(pushAway) > 1e-8) {
+						pushAway = VectorCalculation.normalize(pushAway);
+					} else {
+						// Final fallback: steer sideways relative to current heading.
+						pushAway[0] = -vel[1];
+						pushAway[1] = vel[0];
+						if (VectorCalculation.length(pushAway) > 1e-8) {
+							pushAway = VectorCalculation.normalize(pushAway);
+						}
+					}
+				}
+
+				// Stronger response the closer the look-ahead point is to the obstacle.
+				double gap = Math.max(avoidanceRadius - dist, 0.0);
+				double intensity = Math.pow(gap / Math.max(avoidanceRadius, 1.0), 2) * AVOIDANCE_MULTIPLIER;
+				acc_total[0] += pushAway[0] * intensity;
+				acc_total[1] += pushAway[1] * intensity;
+			}
+		}
 
         // If there is an avoidance force, truncate it to max_acc
         if (VectorCalculation.length(acc_total) > 1e-8) {
@@ -357,7 +398,7 @@ public class Vehicle {
 		}
 
         //   If the position is close to the right-edge then velocity is set to negative to move back to the left edge
-		if (pos[0] > 1000 * Simulation.pix) {
+		if (pos[0] > Simulation.WIDTH * Simulation.pix) {
 			vel[0] = -Math.abs(vel[0]);
 			pos[0] = pos[0] + vel[0];
 		}
@@ -369,7 +410,7 @@ public class Vehicle {
 		}
 
         //   If the position is close to the bottom-edge then
-		if (pos[1] > 700 * Simulation.pix) {
+		if (pos[1] > Simulation.HEIGHT * Simulation.pix) {
 			vel[1] = -Math.abs(vel[1]);
 			pos[1] = pos[1] + vel[1];
 		}
