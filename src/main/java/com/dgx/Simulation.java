@@ -163,7 +163,7 @@ public class Simulation extends JFrame {
             BorderFactory.createEmptyBorder(8, 8, 10, 8)));
 
         JPanel sliderRow = new JPanel(new GridLayout(1, 7, 6, 0));
-        JPanel toggleRow = new JPanel(new GridLayout(1, 6, 6, 0));
+        JPanel toggleRow = new JPanel(new GridLayout(1, 4, 6, 0));
 
         controlPanel.add(sliderRow);
         controlPanel.add(toggleRow);
@@ -281,10 +281,8 @@ public class Simulation extends JFrame {
             myCanvas.setShowObstacleRadius(chkRadius.isSelected());
             myCanvas.repaint();
         });
-        JPanel toggleTile = new JPanel(new BorderLayout(4, 4));
-        toggleTile.add(new JLabel("Toggle Obstacle Radius"), BorderLayout.NORTH);
-        toggleTile.add(chkRadius, BorderLayout.CENTER);
-        toggleRow.add(toggleTile);
+        JPanel toggleCell1 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell1.add(chkRadius);
 
         // 9) Toggle black hole radius visualization
         JCheckBox chkBlackHoleRadius = new JCheckBox("Show black hole radius", false);
@@ -292,10 +290,8 @@ public class Simulation extends JFrame {
             myCanvas.setShowBlackHoleRadius(chkBlackHoleRadius.isSelected());
             myCanvas.repaint();
         });
-        JPanel blackHoleToggleTile = new JPanel(new BorderLayout(4, 4));
-        blackHoleToggleTile.add(new JLabel("Toggle Black Hole Radius"), BorderLayout.NORTH);
-        blackHoleToggleTile.add(chkBlackHoleRadius, BorderLayout.CENTER);
-        toggleRow.add(blackHoleToggleTile);
+        toggleCell1.add(chkBlackHoleRadius);
+        toggleRow.add(toggleCell1);
 
         // 9b) Toggle Q-Table grid overlay
         JCheckBox chkGrid = new JCheckBox("Show Q-Grid", false);
@@ -303,10 +299,8 @@ public class Simulation extends JFrame {
             myCanvas.setShowGrid(chkGrid.isSelected());
             myCanvas.repaint();
         });
-        JPanel gridToggle = new JPanel(new BorderLayout(4,4));
-        gridToggle.add(new JLabel("Toggle Q-Grid"), BorderLayout.NORTH);
-        gridToggle.add(chkGrid, BorderLayout.CENTER);
-        toggleRow.add(gridToggle);
+        JPanel toggleCell2 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell2.add(chkGrid);
 
         // 9c) Toggle Q-values overlay
         JCheckBox chkQVals = new JCheckBox("Show Q-Values", false);
@@ -314,16 +308,8 @@ public class Simulation extends JFrame {
             myCanvas.setShowQValues(chkQVals.isSelected());
             myCanvas.repaint();
         });
-        JPanel qvalsToggle = new JPanel(new BorderLayout(4,4));
-        qvalsToggle.add(new JLabel("Toggle Q-Values"), BorderLayout.NORTH);
-        qvalsToggle.add(chkQVals, BorderLayout.CENTER);
-        toggleRow.add(qvalsToggle);
-
-        JPanel timerTile = new JPanel(new GridLayout(2, 1, 0, 2));
-        timerTile.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
-        timerTile.add(lblSearchTime);
-        timerTile.add(lblLastCapture);
-        toggleRow.add(timerTile);
+        toggleCell2.add(chkQVals);
+        toggleRow.add(toggleCell2);
 
         // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
@@ -338,14 +324,16 @@ public class Simulation extends JFrame {
             myCanvas.repaint();
         });
 
-        JPanel combinedToggleCenter = new JPanel(new GridLayout(1, 2, 12, 4));
-        combinedToggleCenter.add(chkTargetRadius);
-        combinedToggleCenter.add(chkType1Circle);
+        JPanel toggleCell3 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell3.add(chkTargetRadius);
+        toggleCell3.add(chkType1Circle);
 
-        JPanel targetToggleTile = new JPanel(new BorderLayout(4, 4));
-        targetToggleTile.add(new JLabel("Toggle Target/Type1"), BorderLayout.NORTH);
-        targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
-        toggleRow.add(targetToggleTile);
+        JPanel timerTile = new JPanel(new GridLayout(2, 1, 0, 2));
+        timerTile.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        timerTile.add(lblSearchTime);
+        timerTile.add(lblLastCapture);
+        toggleRow.add(toggleCell3);
+        toggleRow.add(timerTile);
 
         // 11) Manual target regeneration button
         JButton btnNewTarget = new JButton("New Target");
