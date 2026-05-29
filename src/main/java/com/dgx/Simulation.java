@@ -156,12 +156,17 @@ public class Simulation extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         add(myCanvas, BorderLayout.CENTER);
 
-        // Control panel with compact tiles arranged in 2 rows x 5 columns
-            JPanel controlPanel = new JPanel(new GridLayout(2, 5, 0, 4));
-            controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        // Control panel arranged as two clean rows
+        JPanel controlPanel = new JPanel(new GridLayout(2, 1, 0, 8));
         controlPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder("Control Panel"),
-            BorderFactory.createEmptyBorder(8, 0, 10, 0)));
+            BorderFactory.createEmptyBorder(8, 8, 10, 8)));
+
+        JPanel sliderRow = new JPanel(new GridLayout(1, 7, 6, 0));
+        JPanel toggleRow = new JPanel(new GridLayout(1, 6, 6, 0));
+
+        controlPanel.add(sliderRow);
+        controlPanel.add(toggleRow);
 
         java.util.function.BiFunction<JLabel, JSlider, JPanel> controlTile = (label, slider) -> {
             JPanel tile = new JPanel(new BorderLayout(4, 4));
@@ -190,7 +195,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblRadius, sliderRadius));
+        sliderRow.add(controlTile.apply(lblRadius, sliderRadius));
 
         // 2) Avoidance multiplier slider (0.0 - 10.0 mapped to 0 - 100)
 //        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
@@ -216,7 +221,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblWeight, sliderWeight));
+        sliderRow.add(controlTile.apply(lblWeight, sliderWeight));
 
         // 4) Cohesion weight slider (0.0 - 2.0 mapped to 0 - 200)
         JLabel lblZus = new JLabel("F_zus: " + String.format("%.2f", Vehicle.F_ZUS_WEIGHT));
@@ -229,7 +234,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblZus, sliderZus));
+        sliderRow.add(controlTile.apply(lblZus, sliderZus));
 
         // 5) Separation weight slider (0.0 - 2.0 mapped to 0 - 200)
         JLabel lblSep = new JLabel("F_sep: " + String.format("%.2f", Vehicle.F_SEP_WEIGHT));
@@ -242,7 +247,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblSep, sliderSep));
+        sliderRow.add(controlTile.apply(lblSep, sliderSep));
 
         // 6) Alignment weight slider (0.0 - 2.0 mapped to 0 - 200)
         JLabel lblAus = new JLabel("F_aus: " + String.format("%.2f", Vehicle.F_AUS_WEIGHT));
@@ -255,7 +260,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblAus, sliderAus));
+        sliderRow.add(controlTile.apply(lblAus, sliderAus));
 
         // 7) Target detection radius slider (1 - 50)
         JLabel lblDetect = new JLabel("Target DetectRadius: " + String.format("%.1f", targetDetectionRadius));
@@ -268,7 +273,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblDetect, sliderDetect));
+        sliderRow.add(controlTile.apply(lblDetect, sliderDetect));
 
         // 8) Toggle obstacle avoidance radius visualization
         JCheckBox chkRadius = new JCheckBox("Show obstacle radius", false);
@@ -279,7 +284,7 @@ public class Simulation extends JFrame {
         JPanel toggleTile = new JPanel(new BorderLayout(4, 4));
         toggleTile.add(new JLabel("Toggle Obstacle Radius"), BorderLayout.NORTH);
         toggleTile.add(chkRadius, BorderLayout.CENTER);
-        controlPanel.add(toggleTile);
+        toggleRow.add(toggleTile);
 
         // 9) Toggle black hole radius visualization
         JCheckBox chkBlackHoleRadius = new JCheckBox("Show black hole radius", false);
@@ -290,7 +295,7 @@ public class Simulation extends JFrame {
         JPanel blackHoleToggleTile = new JPanel(new BorderLayout(4, 4));
         blackHoleToggleTile.add(new JLabel("Toggle Black Hole Radius"), BorderLayout.NORTH);
         blackHoleToggleTile.add(chkBlackHoleRadius, BorderLayout.CENTER);
-        controlPanel.add(blackHoleToggleTile);
+        toggleRow.add(blackHoleToggleTile);
 
         // 9b) Toggle Q-Table grid overlay
         JCheckBox chkGrid = new JCheckBox("Show Q-Grid", false);
@@ -301,7 +306,7 @@ public class Simulation extends JFrame {
         JPanel gridToggle = new JPanel(new BorderLayout(4,4));
         gridToggle.add(new JLabel("Toggle Q-Grid"), BorderLayout.NORTH);
         gridToggle.add(chkGrid, BorderLayout.CENTER);
-        controlPanel.add(gridToggle);
+        toggleRow.add(gridToggle);
 
         // 9c) Toggle Q-values overlay
         JCheckBox chkQVals = new JCheckBox("Show Q-Values", false);
@@ -312,13 +317,13 @@ public class Simulation extends JFrame {
         JPanel qvalsToggle = new JPanel(new BorderLayout(4,4));
         qvalsToggle.add(new JLabel("Toggle Q-Values"), BorderLayout.NORTH);
         qvalsToggle.add(chkQVals, BorderLayout.CENTER);
-        controlPanel.add(qvalsToggle);
+        toggleRow.add(qvalsToggle);
 
         JPanel timerTile = new JPanel(new GridLayout(2, 1, 0, 2));
         timerTile.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
         timerTile.add(lblSearchTime);
         timerTile.add(lblLastCapture);
-        controlPanel.add(timerTile);
+        toggleRow.add(timerTile);
 
         // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
@@ -340,7 +345,7 @@ public class Simulation extends JFrame {
         JPanel targetToggleTile = new JPanel(new BorderLayout(4, 4));
         targetToggleTile.add(new JLabel("Toggle Target/Type1"), BorderLayout.NORTH);
         targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
-        controlPanel.add(targetToggleTile);
+        toggleRow.add(targetToggleTile);
 
         // 11) Manual target regeneration button
         JButton btnNewTarget = new JButton("New Target");
@@ -353,18 +358,13 @@ public class Simulation extends JFrame {
         });
         JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
         buttonTile.add(btnNewTarget, BorderLayout.CENTER);
-        controlPanel.add(buttonTile);
+        sliderRow.add(buttonTile);
 
         // initialize canvas toggles to match checkbox defaults
         myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
         myCanvas.setShowType1Circle(chkType1Circle.isSelected());
         myCanvas.setShowTimer(true);
         refreshTimerLabels.run();
-
-        // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
-        while (controlPanel.getComponentCount() < 10) {
-            controlPanel.add(new JPanel());
-        }
 
         add(controlPanel, BorderLayout.SOUTH);
 

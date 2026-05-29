@@ -178,28 +178,6 @@ public class Canvas extends JPanel {
             (float)(spawnCenterPxY + labelAscent + lineGap)
         );
 
-        if (showTimer) {
-            spawnGraphics.setFont(spawnGraphics.getFont().deriveFont(java.awt.Font.BOLD, 13.0f));
-            java.awt.FontMetrics timerMetrics = spawnGraphics.getFontMetrics();
-            String searchText = String.format("Search time: %.1f s", targetSearchElapsedMillis / 1000.0);
-            String captureText = lastCaptureMillis >= 0
-                ? String.format("Last capture: %.1f s", lastCaptureMillis / 1000.0)
-                : "Last capture: --";
-            int searchTextWidth = timerMetrics.stringWidth(searchText);
-            int captureTextWidth = timerMetrics.stringWidth(captureText);
-            int timerWidth = Math.max(searchTextWidth, captureTextWidth) + 18;
-            int timerHeight = timerMetrics.getHeight() * 2 + 10;
-            int timerX = (int)(spawnCenterPxX - timerWidth / 2.0);
-            int timerY = (int)(spawnCenterPxY + spawnRadiusPx + 8.0);
-
-            spawnGraphics.setColor(new Color(255, 255, 255, 210));
-            spawnGraphics.fillRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
-            spawnGraphics.setColor(new Color(70, 70, 70));
-            spawnGraphics.drawRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
-            spawnGraphics.setColor(Color.BLACK);
-            spawnGraphics.drawString(searchText, timerX + 9, timerY + timerMetrics.getAscent() + 2);
-            spawnGraphics.drawString(captureText, timerX + 9, timerY + timerMetrics.getAscent() + timerMetrics.getHeight() + 2);
-        }
         spawnGraphics.dispose();
 
         // 2. Paint spawnability overlay (green = allowed, red = blocked)
