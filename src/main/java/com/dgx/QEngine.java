@@ -3,7 +3,7 @@ package com.dgx;
 import java.util.Random;
 
 public class QEngine {
-    public static final double CELL_SIZE = 25.0;
+    public static final double CELL_SIZE = 10.0;
     private static final double HALF_WORLD_WIDTH = (Simulation.WIDTH * Simulation.pix) / 2.0;
     private static final double HALF_WORLD_HEIGHT = (Simulation.HEIGHT * Simulation.pix) / 2.0;
     public static int Q_WIDTH = (int) Math.ceil((Simulation.WIDTH * Simulation.pix * 2.0) / CELL_SIZE) + 1;

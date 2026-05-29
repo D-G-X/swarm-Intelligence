@@ -331,6 +331,7 @@ public class Simulation extends JFrame {
         // initialize canvas toggles to match checkbox defaults
         myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
         myCanvas.setShowType1Circle(chkType1Circle.isSelected());
+        myCanvas.setShowTimer(true);
 
         // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
         while (controlPanel.getComponentCount() < 10) {
