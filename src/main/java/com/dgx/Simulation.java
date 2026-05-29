@@ -340,8 +340,58 @@ public class Simulation extends JFrame {
             checkTargetStatus();
             myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
 
+            // Dynamic Swarm Simulation Loop coupled with Q-Learning Brain Updates
             for (Vehicle v : allVehicles) {
+
+                // 1. Capture original continuous state position coordinates
+                double oldX = v.pos[0];
+                double oldY = v.pos[1];
+
+                // 2. Query the Q-Learning engine for high-level direction guidance
+                int action = QEngine.chooseAction(oldX, oldY);
+
+                // 3. Execute vehicle kinematics movement update
                 v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
+
+                // 4. Evaluate Environment Intersections & Distribute Rewards/Punishments
+                double reward = -1.0; // Baseline execution step penalty cost
+                boolean terminalStateReached = false;
+                boolean hitBlackHole = false;
+
+                // Check Black Hole Collision Intersections
+                for (BlackHole bh : allBlackHoles) {
+                    double dx = v.pos[0] - bh.position[0];
+                    double dy = v.pos[1] - bh.position[1];
+                    double distSq = (dx * dx) + (dy * dy);
+                    double killRadius = bh.getHole_radius();
+
+                    if (distSq <= (killRadius * killRadius)) {
+                        reward = -100.0; // Heavy penalty for dying
+                        hitBlackHole = true;
+                        terminalStateReached = true;
+                        break;
+                    }
+                }
+
+                // Check Target Acquisition Intersection (If not already consumed)
+                if (!terminalStateReached && currentTarget != null && !isConsuming) {
+                    double dx = v.pos[0] - currentTarget[0];
+                    double dy = v.pos[1] - currentTarget[1];
+                    double dist = Math.sqrt((dx * dx) + (dy * dy));
+
+                    if (dist < targetDetectionRadius) {
+                        reward = 100.0; // Large positive reward for target capture
+                        terminalStateReached = true;
+                    }
+                }
+
+                // 5. Update the crowdsourced collective swarm intelligence Q-Table
+                QEngine.updateQ(oldX, oldY, action, reward, v.pos[0], v.pos[1]);
+
+                // 6. Handle Respawn Operations
+                if (terminalStateReached) {
+                    placeVehicleInSpawnCircle(v); // Reset position coordinates seamlessly
+                }
             }
 
             repaint();

@@ -182,61 +182,49 @@ public class Vehicle {
 		return acc_dest;
 	}
 
-    public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
-        double[] acc_dest;
-        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment
-		double f_zus = F_ZUS_WEIGHT;
-		double f_sep = F_SEP_WEIGHT;
-		double f_aus = F_AUS_WEIGHT;
-		double f_obs = OBS_WEIGHT; // High priority to avoid hitting boxes
-        double f_target = 0.3;
-
-        double[] acc_cohesion = cohesion(allVehicles);
-        double[] acc_sep = separation(allVehicles);
-        double[] acc_align = alignment(allVehicles);
-        double[] acc_obs = obstacleAvoidance(obstacles);
-        double[] acc_seek = seekTarget(target);
-
-
-        double x = (f_zus * acc_cohesion[0]) + (f_sep * acc_sep[0]) +
-                (f_aus * acc_align[0]) + (f_obs * acc_obs[0]);
-        double y = (f_zus * acc_cohesion[1]) + (f_sep * acc_sep[1]) +
-                (f_aus * acc_align[1]) + (f_obs * acc_obs[1]);
-
-        acc_dest = new double[]{x, y};
-        acc_dest = VectorCalculation.truncate(acc_dest, max_acc);
-        return acc_dest;
-    }
-
     public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
-        // 1. Define all weights
-		double f_zus = F_ZUS_WEIGHT;
-		double f_sep = isConsuming ? 0.0 : F_SEP_WEIGHT;;
-		double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT; // Keep obstacle avoidance strong while consuming
-		double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT; // Stop trying to "flow" together if eating
-		double f_target = isConsuming ? 1.2 : 0.00; // small pre-detection pull, stronger while consuming
+        // 1. Get the Q-learning choice for this vehicle's position
+        int action = QEngine.chooseAction(this.pos[0], this.pos[1]);
 
-        // 2. Calculate individual force vectors
+        // Convert choice to a direction vector
+        double[] qForce = new double[2];
+        switch (action) {
+            case 0: qForce[1] = -max_acc; break; // Up
+            case 1: qForce[1] =  max_acc; break; // Down
+            case 2: qForce[0] = -max_acc; break; // Left
+            case 3: qForce[0] =  max_acc; break; // Right
+        }
+
+        // 2. Define all your weights
+        double f_zus = F_ZUS_WEIGHT;
+        double f_sep = isConsuming ? 0.0 : F_SEP_WEIGHT;
+        double f_obs = isConsuming ? Math.max(OBS_WEIGHT, 1.2) : OBS_WEIGHT;
+        double f_aus = isConsuming ? 0.0 : F_AUS_WEIGHT;
+        double f_target = isConsuming ? 1.2 : 0.00;
+        double f_qlearning = 0.8; // Balance parameter: weight of RL brain vs. swarm behavior
+
+        // 3. Calculate individual force vectors
         double[] acc_cohesion = cohesion(allVehicles);
         double[] acc_sep      = separation(allVehicles);
         double[] acc_align    = alignment(allVehicles);
         double[] acc_obs      = obstacleAvoidance(obstacles);
         double[] acc_seek     = seekTarget(target);
 
-        // 3. Combine all forces into a single X and Y sum
+        // 4. Combine all forces including the new Q-learning vector
         double x = (f_zus * acc_cohesion[0]) +
                 (f_sep * acc_sep[0]) +
                 (f_aus * acc_align[0]) +
                 (f_obs * acc_obs[0]) +
-                (f_target * acc_seek[0]);
+                (f_target * acc_seek[0]) +
+                (f_qlearning * qForce[0]); // Adds collective experience direction
 
         double y = (f_zus * acc_cohesion[1]) +
                 (f_sep * acc_sep[1]) +
                 (f_aus * acc_align[1]) +
                 (f_obs * acc_obs[1]) +
-                (f_target * acc_seek[1]);
+                (f_target * acc_seek[1]) +
+                (f_qlearning * qForce[1]);
 
-        // 4. Create the final acceleration vector and limit it to max_acc
         double[] acc_dest = new double[]{x, y};
         return VectorCalculation.truncate(acc_dest, max_acc);
     }
