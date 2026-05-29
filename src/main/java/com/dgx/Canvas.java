@@ -19,6 +19,7 @@ public class Canvas extends JPanel {
     boolean isConsuming;
     boolean showObstacleRadius;
     boolean showGrid;
+    boolean showQValues;
     boolean showBlackHoleRadius;
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
@@ -66,6 +67,10 @@ public class Canvas extends JPanel {
 
     public void setShowGrid(boolean showGrid) {
         this.showGrid = showGrid;
+    }
+
+    public void setShowQValues(boolean showQValues) {
+        this.showQValues = showQValues;
     }
 
     public void setShowType1Circle(boolean showType1Circle) {
@@ -226,21 +231,7 @@ public class Canvas extends JPanel {
         }
         overlay.dispose();
 
-        // 2b. Paint Q-Table grid overlay (world-aligned) if enabled
-        if (showGrid) {
-            Graphics2D gridG = (Graphics2D) g2d.create();
-            gridG.setColor(new java.awt.Color(0, 0, 0, 40));
-            int gridStepPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
-            int w = getWidth();
-            int h = getHeight();
-            for (int gx = 0; gx < w; gx += gridStepPx) {
-                gridG.drawLine(gx, 0, gx, h);
-            }
-            for (int gy = 0; gy < h; gy += gridStepPx) {
-                gridG.drawLine(0, gy, w, gy);
-            }
-            gridG.dispose();
-        }
+        
 
         // 3. Paint Target
         if (currentTarget != null) {
@@ -418,6 +409,52 @@ public class Canvas extends JPanel {
 
                 bhG.dispose();
             }
+        }
+
+        // 6. Top-layer overlays: grid and Q-values (drawn after obstacles & black holes)
+        if (showGrid) {
+            Graphics2D gridG = (Graphics2D) g2d.create();
+            gridG.setColor(new java.awt.Color(0, 0, 0, 120));
+            int gridStepPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+            int w = getWidth();
+            int h = getHeight();
+            for (int gx = 0; gx < w; gx += gridStepPx) {
+                gridG.drawLine(gx, 0, gx, h);
+            }
+            for (int gy = 0; gy < h; gy += gridStepPx) {
+                gridG.drawLine(0, gy, w, gy);
+            }
+            gridG.dispose();
+        }
+
+        if (showQValues) {
+            Graphics2D qg = (Graphics2D) g2d.create();
+            qg.setColor(new java.awt.Color(0, 0, 0, 200));
+            int cellPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+            if (cellPx >= 8) { // only render when readable
+                java.awt.Font f = qg.getFont().deriveFont(9.0f);
+                qg.setFont(f);
+                for (int gx = 0; gx < QEngine.Q.length; gx++) {
+                    for (int gy = 0; gy < QEngine.Q[0].length; gy++) {
+                        double maxQ = Double.NEGATIVE_INFINITY;
+                        for (int a = 0; a < QEngine.Q[0][0].length; a++) {
+                            maxQ = Math.max(maxQ, QEngine.Q[gx][gy][a]);
+                        }
+                        int cx = (int)((gx * QEngine.CELL_SIZE + QEngine.CELL_SIZE/2.0) / pix);
+                        int cy = (int)((gy * QEngine.CELL_SIZE + QEngine.CELL_SIZE/2.0) / pix);
+                        String s = String.format("%.1f", maxQ);
+                        java.awt.FontMetrics fm = qg.getFontMetrics();
+                        int sw = fm.stringWidth(s);
+                        int sh = fm.getAscent();
+                        // background for readability
+                        qg.setColor(new java.awt.Color(255, 255, 255, 200));
+                        qg.fillRect(cx - sw/2 - 2, cy - sh + 1, sw + 4, sh + 2);
+                        qg.setColor(new java.awt.Color(0, 0, 0, 220));
+                        qg.drawString(s, cx - sw/2, cy + 1);
+                    }
+                }
+            }
+            qg.dispose();
         }
     }
 

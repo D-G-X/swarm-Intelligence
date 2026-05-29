@@ -294,6 +294,17 @@ public class Simulation extends JFrame {
         gridToggle.add(chkGrid, BorderLayout.CENTER);
         controlPanel.add(gridToggle);
 
+        // 9c) Toggle Q-values overlay
+        JCheckBox chkQVals = new JCheckBox("Show Q-Values", false);
+        chkQVals.addActionListener(e -> {
+            myCanvas.setShowQValues(chkQVals.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel qvalsToggle = new JPanel(new BorderLayout(4,4));
+        qvalsToggle.add(new JLabel("Toggle Q-Values"), BorderLayout.NORTH);
+        qvalsToggle.add(chkQVals, BorderLayout.CENTER);
+        controlPanel.add(qvalsToggle);
+
         // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
