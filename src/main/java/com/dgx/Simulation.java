@@ -373,6 +373,26 @@ public class Simulation extends JFrame {
                     }
                 }
 
+                // Check Obstacle Intersections
+                if (!terminalStateReached) {
+                    for (Obstacle obs : allObstacles) {
+                        double ox = obs.position[0];
+                        double oy = obs.position[1];
+                        double ow = obs.getObstacle_width();
+                        double oh = obs.getObstacle_height();
+
+                        if (v.pos[0] >= ox && v.pos[0] <= ox + ow &&
+                                v.pos[1] >= oy && v.pos[1] <= oy + oh) {
+                            reward = -10.0; // Penalty for touching an obstacle
+                            v.pos[0] = oldX;
+                            v.pos[1] = oldY;
+                            v.vel[0] = -v.vel[0] * 0.8;
+                            v.vel[1] = -v.vel[1] * 0.8;
+                            break;
+                        }
+                    }
+                }
+
                 // Check Target Acquisition Intersection (If not already consumed)
                 if (!terminalStateReached && currentTarget != null && !isConsuming) {
                     double dx = v.pos[0] - currentTarget[0];
