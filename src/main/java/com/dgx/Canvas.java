@@ -20,6 +20,7 @@ public class Canvas extends JPanel {
     boolean showObstacleRadius;
     boolean showGrid;
     boolean showQValues;
+    boolean showQShade;
     boolean showBlackHoleRadius;
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
@@ -71,6 +72,10 @@ public class Canvas extends JPanel {
 
     public void setShowQValues(boolean showQValues) {
         this.showQValues = showQValues;
+    }
+
+    public void setShowQShade(boolean showQShade) {
+        this.showQShade = showQShade;
     }
 
     public void setShowType1Circle(boolean showType1Circle) {
@@ -386,6 +391,54 @@ public class Canvas extends JPanel {
                 }
 
                 bhG.dispose();
+            }
+        }
+
+        if (showQShade) {
+            double minQ = Double.POSITIVE_INFINITY;
+            double maxQ = Double.NEGATIVE_INFINITY;
+            for (int gx = 0; gx < QEngine.Q.length; gx++) {
+                for (int gy = 0; gy < QEngine.Q[0].length; gy++) {
+                    double cellBest = Double.NEGATIVE_INFINITY;
+                    for (int a = 0; a < QEngine.Q[0][0].length; a++) {
+                        cellBest = Math.max(cellBest, QEngine.Q[gx][gy][a]);
+                    }
+                    minQ = Math.min(minQ, cellBest);
+                    maxQ = Math.max(maxQ, cellBest);
+                }
+            }
+
+            double range = maxQ - minQ;
+            if (range > 1e-9) {
+                Graphics2D shadeG = (Graphics2D) g2d.create();
+                int cellPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+                if (cellPx >= 4) {
+                    for (int gx = 0; gx < QEngine.Q.length; gx++) {
+                        for (int gy = 0; gy < QEngine.Q[0].length; gy++) {
+                            double cellBest = Double.NEGATIVE_INFINITY;
+                            for (int a = 0; a < QEngine.Q[0][0].length; a++) {
+                                cellBest = Math.max(cellBest, QEngine.Q[gx][gy][a]);
+                            }
+
+                            double normalized = (cellBest - minQ) / range;
+                            normalized = Math.max(0.0, Math.min(1.0, normalized));
+
+                            int red = (int) Math.round(255 * (1.0 - normalized));
+                            int green = (int) Math.round(255 * normalized);
+                            int alpha = 28 + (int) Math.round(24 * normalized);
+
+                            shadeG.setColor(new Color(red, green, 80, alpha));
+                            int x = (int) Math.round((gx * QEngine.CELL_SIZE) / pix);
+                            int y = (int) Math.round((gy * QEngine.CELL_SIZE) / pix);
+                            int w = Math.min(cellPx, getWidth() - x);
+                            int h = Math.min(cellPx, getHeight() - y);
+                            if (w > 0 && h > 0) {
+                                shadeG.fillRect(x, y, w, h);
+                            }
+                        }
+                    }
+                }
+                shadeG.dispose();
             }
         }
 

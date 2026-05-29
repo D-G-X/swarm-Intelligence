@@ -163,7 +163,7 @@ public class Simulation extends JFrame {
             BorderFactory.createEmptyBorder(8, 8, 10, 8)));
 
         JPanel sliderRow = new JPanel(new GridLayout(1, 7, 6, 0));
-        JPanel toggleRow = new JPanel(new GridLayout(1, 4, 6, 0));
+        JPanel toggleRow = new JPanel(new GridLayout(1, 5, 6, 0));
 
         controlPanel.add(sliderRow);
         controlPanel.add(toggleRow);
@@ -281,61 +281,65 @@ public class Simulation extends JFrame {
             myCanvas.setShowObstacleRadius(chkRadius.isSelected());
             myCanvas.repaint();
         });
-        JPanel toggleCell1 = new JPanel(new GridLayout(2, 1, 0, 4));
-        toggleCell1.add(chkRadius);
-
-        // 9) Toggle black hole radius visualization
         JCheckBox chkBlackHoleRadius = new JCheckBox("Show black hole radius", false);
         chkBlackHoleRadius.addActionListener(e -> {
             myCanvas.setShowBlackHoleRadius(chkBlackHoleRadius.isSelected());
             myCanvas.repaint();
         });
+        JPanel toggleCell1 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell1.add(chkRadius);
         toggleCell1.add(chkBlackHoleRadius);
         toggleRow.add(toggleCell1);
 
-        // 9b) Toggle Q-Table grid overlay
+        // 9) Toggle Q-Table grid overlay + shade
         JCheckBox chkGrid = new JCheckBox("Show Q-Grid", false);
         chkGrid.addActionListener(e -> {
             myCanvas.setShowGrid(chkGrid.isSelected());
             myCanvas.repaint();
         });
+        JCheckBox chkQShade = new JCheckBox("Q Shade", false);
+        chkQShade.addActionListener(e -> {
+            myCanvas.setShowQShade(chkQShade.isSelected());
+            myCanvas.repaint();
+        });
         JPanel toggleCell2 = new JPanel(new GridLayout(2, 1, 0, 4));
         toggleCell2.add(chkGrid);
+        toggleCell2.add(chkQShade);
+        toggleRow.add(toggleCell2);
 
-        // 9c) Toggle Q-values overlay
+        // 10) Toggle Q-values overlay + target radius
         JCheckBox chkQVals = new JCheckBox("Show Q-Values", false);
         chkQVals.addActionListener(e -> {
             myCanvas.setShowQValues(chkQVals.isSelected());
             myCanvas.repaint();
         });
-        toggleCell2.add(chkQVals);
-        toggleRow.add(toggleCell2);
-
-        // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
             myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
             myCanvas.repaint();
         });
+        JPanel toggleCell3 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell3.add(chkQVals);
+        toggleCell3.add(chkTargetRadius);
+        toggleRow.add(toggleCell3);
 
+        // 11) Toggle type1 circle
         JCheckBox chkType1Circle = new JCheckBox("Show type1 circle", false);
         chkType1Circle.addActionListener(e -> {
             myCanvas.setShowType1Circle(chkType1Circle.isSelected());
             myCanvas.repaint();
         });
-
-        JPanel toggleCell3 = new JPanel(new GridLayout(2, 1, 0, 4));
-        toggleCell3.add(chkTargetRadius);
-        toggleCell3.add(chkType1Circle);
+        JPanel toggleCell4 = new JPanel(new GridLayout(1, 1, 0, 4));
+        toggleCell4.add(chkType1Circle);
+        toggleRow.add(toggleCell4);
 
         JPanel timerTile = new JPanel(new GridLayout(2, 1, 0, 2));
         timerTile.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
         timerTile.add(lblSearchTime);
         timerTile.add(lblLastCapture);
-        toggleRow.add(toggleCell3);
         toggleRow.add(timerTile);
 
-        // 11) Manual target regeneration button
+        // 12) Manual target regeneration button
         JButton btnNewTarget = new JButton("New Target");
         btnNewTarget.addActionListener(e -> {
             isDispersing = false;
@@ -351,6 +355,7 @@ public class Simulation extends JFrame {
         // initialize canvas toggles to match checkbox defaults
         myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
         myCanvas.setShowType1Circle(chkType1Circle.isSelected());
+        myCanvas.setShowQShade(chkQShade.isSelected());
         myCanvas.setShowTimer(true);
         refreshTimerLabels.run();
 
