@@ -8,7 +8,7 @@ public class Vehicle {
 	public static double BASE_AVOIDANCE_RADIUS = 0.0; // world units
 	public static double AVOIDANCE_MULTIPLIER = 1.0;   // intensity scaling
 	public static double OBS_WEIGHT = 0.4;            // weight used when combining forces
-	public static double F_ZUS_WEIGHT = 0.6;
+	public static double F_ZUS_WEIGHT = 0.25;
 	public static double F_SEP_WEIGHT = 1.2;
 	public static double F_AUS_WEIGHT = 0.4;
 	int id; 
