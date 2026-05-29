@@ -170,6 +170,15 @@ public class Simulation extends JFrame {
             return tile;
         };
 
+        final JLabel lblSearchTime = new JLabel("Search time: 0.0 s");
+        final JLabel lblLastCapture = new JLabel("Last capture: --");
+        Runnable refreshTimerLabels = () -> {
+            lblSearchTime.setText(String.format("Search time: %.1f s", targetSearchElapsedMillis / 1000.0));
+            lblLastCapture.setText(lastCaptureMillis >= 0
+                ? String.format("Last capture: %.1f s", lastCaptureMillis / 1000.0)
+                : "Last capture: --");
+        };
+
         // 1) Base avoidance radius slider (0 - 200)
         JLabel lblRadius = new JLabel("AvoidRadius: " + (int)Vehicle.BASE_AVOIDANCE_RADIUS);
         JSlider sliderRadius = new JSlider(0, 200, (int)Math.round(Vehicle.BASE_AVOIDANCE_RADIUS));
@@ -203,7 +212,7 @@ public class Simulation extends JFrame {
         sliderWeight.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 Vehicle.OBS_WEIGHT = sliderWeight.getValue() / 100.0;
-                lblWeight.setText("ObsWeight: " + String.format("%.2f", Vehicle.OBS_WEIGHT));
+                lblWeight.setText("F_OBS: " + String.format("%.2f", Vehicle.OBS_WEIGHT));
                 myCanvas.repaint();
             }
         });
@@ -305,6 +314,12 @@ public class Simulation extends JFrame {
         qvalsToggle.add(chkQVals, BorderLayout.CENTER);
         controlPanel.add(qvalsToggle);
 
+        JPanel timerTile = new JPanel(new GridLayout(2, 1, 0, 2));
+        timerTile.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        timerTile.add(lblSearchTime);
+        timerTile.add(lblLastCapture);
+        controlPanel.add(timerTile);
+
         // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
@@ -333,6 +348,7 @@ public class Simulation extends JFrame {
             isDispersing = false;
             spawnNextTarget();
             myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
+            refreshTimerLabels.run();
             myCanvas.repaint();
         });
         JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
@@ -343,6 +359,7 @@ public class Simulation extends JFrame {
         myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
         myCanvas.setShowType1Circle(chkType1Circle.isSelected());
         myCanvas.setShowTimer(true);
+        refreshTimerLabels.run();
 
         // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
         while (controlPanel.getComponentCount() < 10) {
@@ -358,10 +375,12 @@ public class Simulation extends JFrame {
         spawnNextTarget();
 
         myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
+        refreshTimerLabels.run();
 
         new Timer(sleep, e -> {
             checkTargetStatus();
             myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
+            refreshTimerLabels.run();
 
             // Dynamic Swarm Simulation Loop coupled with Q-Learning Brain Updates
             for (Vehicle v : allVehicles) {
