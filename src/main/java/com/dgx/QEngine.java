@@ -15,7 +15,7 @@ public class QEngine {
     public static final double ALPHA = 0.1;
     public static final double GAMMA = 0.9;
     public static final double EPSILON = 0.25;
-    public static final double VISIT_BONUS = 3.0;
+    public static final double VISIT_BONUS = 8.0;
     public static final Random rand = new Random();
 
     public static int[][] visitCounts = new int[Q_WIDTH][Q_HEIGHT];
