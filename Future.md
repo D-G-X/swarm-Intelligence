@@ -1,107 +1,85 @@
-# Future Work
+# Future Work: Swarm Reinforcement Learning with Shared Q-Table
 
-## Reinforcement Learning with Q-Table
+The next step for the simulation is to integrate a collaborative reinforcement learning framework. This allows the vehicles to crowdsource a high-level "brain" to navigate safely around obstacles and black holes, augmenting their low-level steering rules.
 
-The next step for the simulation is to add reinforcement learning so each vehicle can learn better decisions over time instead of only relying on fixed steering rules.
+## Core Architecture
 
-### Core idea
+- **Collective Intelligence**: All vehicles operate as independent agents but read from and write to a single, globally **shared 3D Q-Table**. This enables parallel, accelerated learning across the entire swarm.
+- **Blending Brains and Boids**: The selected Q-learning actions do not erase your existing Reynolds flocking behaviors (`cohesion`, `separation`, `alignment`). Instead, the chosen action generates an additional steering force vector ($qForce$) that seamlessly influences the vehicle's total acceleration ($acc$).
 
-- Treat each vehicle as an agent.
-- Use a Q-table to learn which action is best for a given state.
-- Reward the vehicle for moving toward the target.
-- Penalize the vehicle for bad outcomes, especially blackhole collisions.
+---
 
-### State design
+## State Space Discretization
 
-Because the simulation is continuous, the environment should be converted into discrete states before using a Q-table. Useful state inputs could include:
+Because the vehicles move using continuous floating-point pixels/coordinates, standard array indexing breaks down. To utilize a structured Q-Table, the continuous canvas map is partitioned into an invisible grid of mathematical zones exclusively for state representation.
 
-- distance to the target
-- angle to the target
-- distance to the nearest blackhole
-- current speed or motion direction
+- **Grid Sizing**: A spatial cell step size (e.g., `CELL_SIZE = 25.0` world units) divides the arena.
+- **Matrix Mapping**:
+  - $\text{Grid X} = \lfloor \text{Vehicle Position X} / \text{CELL_SIZE} \rfloor$
+  - $\text{Grid Y} = \lfloor \text{Vehicle Position Y} / \text{CELL_SIZE} \rfloor$
+- **Array Dimension**: This results in a 3D table structure declared as `double[Q_WIDTH][Q_HEIGHT][ACTIONS]`.
 
-These values can be grouped into bins such as near / medium / far or left / ahead / right.
+---
 
-### Action design
+## Action Space Design
 
-Keep the action space small and discrete. Example actions:
+The action space is kept discrete, small, and stable by mapping choices onto the 4 cardinal compass directions. Rather than overriding raw positions, each action applies a directional impulse vector matched to your vehicle's maximum capability (`max_acc`):
 
-- turn left
-- go straight
-- turn right
-- accelerate
-- brake
+- **Action `0` (UP)**: Applies a vertical corrective steering force against the Y-axis (`qForce[1] = -max_acc`).
+- **Action `1` (DOWN)**: Applies a vertical steering force pushing along the Y-axis (`qForce[1] = max_acc`).
+- **Action `2` (LEFT)**: Applies a horizontal steering force pushing against the X-axis (`qForce[0] = -max_acc`).
+- **Action `3` (RIGHT)**: Applies a horizontal steering force pushing along the X-axis (`qForce[0] = max_acc`).
 
-### Reward design
+---
 
-A simple reward structure could be:
+## Swarm Reward Function ($R$)
 
-- `+100` for reaching the target
-- `+1` for moving closer to the target
-- `-1` for moving away from the target
-- `-10` for getting too close to a blackhole
-- `-100` for touching a blackhole and dying
-- `-0.1` per time step to encourage faster solutions
+To force the swarm to steer clear of deadly regions and hunt down the current target, the simulation loop applies distinct feedback markers based on object intersections:
 
-If a vehicle dies, it should respawn at the spawn point and receive a strong negative reward so the model learns to avoid blackholes.
+| Vehicle Landing Condition        | Reward Value ($r$) | Terminate Step & Trigger Respawn?                          |
+| :------------------------------- | :----------------- | :--------------------------------------------------------- |
+| **Target Capture Zone**          | `+100.0`           | **Yes** (Successfully completes trajectory)                |
+| **Black Hole Core Radius**       | `-100.0`           | **Yes** (Vehicle dies instantly)                           |
+| **Obstacle Bounds Intersection** | `-10.0`            | **No** (Steering is penalized, vehicle bounces/stays put)  |
+| **Open Safe Pathway**            | `-1.0`             | **No** (Standard step penalty to optimize for short paths) |
 
-### Learning update
+---
 
-The Q-value update rule would be:
+## Learning Update Rule
 
-$$
-Q(s,a) \leftarrow Q(s,a) + \alpha \left[r + \gamma \max_{a'} Q(s',a') - Q(s,a)\right]
-$$
+After every physical execution step, the individual transitions are saved to the global table using the Temporal Difference model:
+
+$$Q(s,a) \leftarrow Q(s,a) + \alpha \cdot \left[ r + \gamma \cdot \max_{a'} Q(s',a') - Q(s,a) \right]$$
 
 Where:
 
-- `s` is the current state
-- `a` is the chosen action
-- `r` is the reward
-- `s'` is the next state
-- `\alpha` is the learning rate
-- `\gamma` is the discount factor
+- `\alpha` (**Learning Rate** = `0.1`): Dictates that the agent adjusts its table records incrementally by 10% per transition to avoid erratic updates.
+- `\gamma` (**Discount Factor** = `0.9`): Forces vehicles to care deeply about future cumulative potential, assisting in long-term bypass navigation around obstacles.
+- `\epsilon` (**Exploration Index** = `0.15`): Dictates an $\epsilon$-greedy balance where the vehicle explores randomly 15% of the time, and exploits its maximum Q-values the remaining 85%.
 
-### Suggested implementation path
+---
 
-1. Detect when a vehicle touches a blackhole.
-2. Mark the vehicle as dead and apply a negative reward.
-3. Respawn the vehicle at the spawn point.
-4. Update the Q-table from the transition.
-5. Repeat over many episodes so the swarm gradually learns safer behavior.
+## Implementation Checklist
 
-### Implementation checklist
+### 1. New Class: `BrainQLearning.java`
 
-- Add a `dead` state to each vehicle.
-- Detect blackhole collisions every simulation step.
-- On collision, apply the penalty and reset the vehicle position to the spawn point.
-- Discretize state values into bins before indexing the Q-table.
-- Implement `chooseAction`, `applyAction`, and `updateQValue` helpers.
-- Store and reuse the Q-table across vehicles if using a shared learning policy.
-- Start with a small action set and expand only if needed.
+- - [ ] Define hyperparameter constants (`ALPHA`, `GAMMA`, `EPSILON`, `CELL_SIZE`).
+- - [ ] Allocate the static multi-agent 3D array `Q` matrix.
+- - [ ] Implement index conversion utilities `toGridX()` and `toGridY()`.
+- - [ ] Write an $\epsilon$-greedy action selection method `chooseAction()`.
+- - [ ] Write the mathematical learning updater `updateQ()`.
 
-### Roadmap
+### 2. Vehicle Class Updates: `Vehicle.java`
 
-#### Phase 1: Basic learning loop
+- - [ ] Incorporate a `qForce` switch-case block inside `calculateWeightedAcc()`.
+- - [ ] Factor the new `qForce` vectors into the composite `x` and `y` acceleration pools.
+- - [ ] Assign a tuning weight configuration (`f_qlearning`) to balance the RL grid engine alongside the baseline boid forces.
 
-- Add the Q-table data structure.
-- Add state discretization.
-- Add reward handling for target success, movement, and blackhole death.
+### 3. Loop Interlocking: `Simulation.java`
 
-#### Phase 2: Respawn and training
-
-- Respawn dead vehicles at the spawn point.
-- Track episode resets and running reward totals.
-- Tune learning rate, discount factor, and exploration rate.
-
-#### Phase 3: Behavior improvement
-
-- Compare learned behavior against the current rule-based steering.
-- Adjust bins and rewards if the swarm gets stuck or ignores the target.
-- Consider moving to a more advanced model later if the Q-table becomes too large.
-
-### Notes
-
-- A shared Q-table for all vehicles is the simplest starting point.
-- The state space should stay small enough that the table remains manageable.
-- More advanced methods like DQN can be explored later if the Q-table becomes too large.
+- - [ ] Cache a vehicle's pre-movement `(oldX, oldY)` coordinates inside the `Timer` frame execution.
+- - [ ] Query `BrainQLearning.chooseAction()` before updating velocity vectors.
+- - [ ] Execute `v.move()` as normal.
+- - [ ] Check distance loops for target capture or black hole destruction zones.
+- - [ ] Submit state outputs and corresponding rewards to `BrainQLearning.updateQ()`.
+- - [ ] Intercept vehicle deaths to invoke `placeVehicleInSpawnCircle()` instantly, keeping the active swarm headcount stable.
