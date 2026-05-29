@@ -386,10 +386,14 @@ public class Simulation extends JFrame {
                 }
 
                 // 5. Update the crowdsourced collective swarm intelligence Q-Table
-                QEngine.updateQ(oldX, oldY, action, reward, v.pos[0], v.pos[1]);
+                if (currentTarget != null) {
+                    QEngine.updateQ(oldX, oldY, action, reward, v.pos[0], v.pos[1], currentTarget[0], currentTarget[1]);
+                } else {
+                    QEngine.updateQ(oldX, oldY, action, reward, v.pos[0], v.pos[1]);
+                }
 
                 // 6. Handle Respawn Operations
-                if (terminalStateReached) {
+                if (hitBlackHole) {
                     placeVehicleInSpawnCircle(v); // Reset position coordinates seamlessly
                 }
             }
