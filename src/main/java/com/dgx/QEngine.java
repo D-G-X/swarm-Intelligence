@@ -15,7 +15,10 @@ public class QEngine {
     public static final double ALPHA = 0.1;
     public static final double GAMMA = 0.9;
     public static final double EPSILON = 0.25;
+    public static final double VISIT_BONUS = 0.08;
     public static final Random rand = new Random();
+
+    public static int[][] visitCounts = new int[Q_WIDTH][Q_HEIGHT];
 
     public static int toGridX(double x) {
         return toGridX(x, 0.0);
@@ -69,6 +72,10 @@ public class QEngine {
         int nx = toGridX(newX, targetX);
         int ny = toGridY(newY, targetY);
 
+        visitCounts[nx][ny]++;
+        double explorationBonus = VISIT_BONUS / Math.sqrt(visitCounts[nx][ny]);
+        double shapedReward = reward + explorationBonus;
+
         double oldQ =  Q[ox][oy][action];
 
         double maxNextQ = Q[nx][ny][0];
@@ -76,7 +83,7 @@ public class QEngine {
             maxNextQ = Math.max(maxNextQ, Q[nx][ny][i]);
         }
 
-        Q[ox][oy][action] = oldQ + ALPHA *(reward + GAMMA * maxNextQ - oldQ);
+        Q[ox][oy][action] = oldQ + ALPHA *(shapedReward + GAMMA * maxNextQ - oldQ);
     }
 
 }

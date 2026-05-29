@@ -184,20 +184,20 @@ public class Simulation extends JFrame {
         controlPanel.add(controlTile.apply(lblRadius, sliderRadius));
 
         // 2) Avoidance multiplier slider (0.0 - 10.0 mapped to 0 - 100)
-        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
-        JSlider sliderMult = new JSlider(0, 100, (int)Math.round(Vehicle.AVOIDANCE_MULTIPLIER * 10));
-        sliderMult.setMajorTickSpacing(25);
-        sliderMult.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                Vehicle.AVOIDANCE_MULTIPLIER = sliderMult.getValue() / 10.0;
-                lblMult.setText("AvoidMult: " + String.format("%.1f", Vehicle.AVOIDANCE_MULTIPLIER));
-                myCanvas.repaint();
-            }
-        });
-        controlPanel.add(controlTile.apply(lblMult, sliderMult));
+//        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
+//        JSlider sliderMult = new JSlider(0, 100, (int)Math.round(Vehicle.AVOIDANCE_MULTIPLIER * 10));
+//        sliderMult.setMajorTickSpacing(25);
+//        sliderMult.addChangeListener(new ChangeListener() {
+//            public void stateChanged(ChangeEvent e) {
+//                Vehicle.AVOIDANCE_MULTIPLIER = sliderMult.getValue() / 10.0;
+//                lblMult.setText("AvoidMult: " + String.format("%.1f", Vehicle.AVOIDANCE_MULTIPLIER));
+//                myCanvas.repaint();
+//            }
+//        });
+//        controlPanel.add(controlTile.apply(lblMult, sliderMult));
 
         // 3) Obstacle weight slider (0.0 - 2.0 mapped to 0 - 200)
-        JLabel lblWeight = new JLabel("ObsWeight: " + Vehicle.OBS_WEIGHT);
+        JLabel lblWeight = new JLabel("F_OBS: " + Vehicle.OBS_WEIGHT);
         JSlider sliderWeight = new JSlider(0, 200, (int)Math.round(Vehicle.OBS_WEIGHT * 100));
         sliderWeight.setMajorTickSpacing(50);
         sliderWeight.addChangeListener(new ChangeListener() {
