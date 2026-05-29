@@ -283,6 +283,17 @@ public class Simulation extends JFrame {
         blackHoleToggleTile.add(chkBlackHoleRadius, BorderLayout.CENTER);
         controlPanel.add(blackHoleToggleTile);
 
+        // 9b) Toggle Q-Table grid overlay
+        JCheckBox chkGrid = new JCheckBox("Show Q-Grid", false);
+        chkGrid.addActionListener(e -> {
+            myCanvas.setShowGrid(chkGrid.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel gridToggle = new JPanel(new BorderLayout(4,4));
+        gridToggle.add(new JLabel("Toggle Q-Grid"), BorderLayout.NORTH);
+        gridToggle.add(chkGrid, BorderLayout.CENTER);
+        controlPanel.add(gridToggle);
+
         // 10) Toggle target detection radius visualization + show type1 circles
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {

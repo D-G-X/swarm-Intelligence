@@ -18,6 +18,7 @@ public class Canvas extends JPanel {
     double[] currentTarget;
     boolean isConsuming;
     boolean showObstacleRadius;
+    boolean showGrid;
     boolean showBlackHoleRadius;
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
@@ -61,6 +62,10 @@ public class Canvas extends JPanel {
 
     public void setShowTargetDetectionRadius(boolean showTargetDetectionRadius) {
         this.showTargetDetectionRadius = showTargetDetectionRadius;
+    }
+
+    public void setShowGrid(boolean showGrid) {
+        this.showGrid = showGrid;
     }
 
     public void setShowType1Circle(boolean showType1Circle) {
@@ -220,6 +225,22 @@ public class Canvas extends JPanel {
             }
         }
         overlay.dispose();
+
+        // 2b. Paint Q-Table grid overlay (world-aligned) if enabled
+        if (showGrid) {
+            Graphics2D gridG = (Graphics2D) g2d.create();
+            gridG.setColor(new java.awt.Color(0, 0, 0, 40));
+            int gridStepPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+            int w = getWidth();
+            int h = getHeight();
+            for (int gx = 0; gx < w; gx += gridStepPx) {
+                gridG.drawLine(gx, 0, gx, h);
+            }
+            for (int gy = 0; gy < h; gy += gridStepPx) {
+                gridG.drawLine(0, gy, w, gy);
+            }
+            gridG.dispose();
+        }
 
         // 3. Paint Target
         if (currentTarget != null) {
