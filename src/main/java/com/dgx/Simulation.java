@@ -33,7 +33,7 @@ public class Simulation extends JFrame {
     static final int HEIGHT = 800;
     final int WORLD_MARGIN = 10;
     final int WORLD_BORDER_WIDTH = 2;
-    static int sleep = 8; // delay in frame
+    static int sleep = 2; // delay in frame
     static double pix = 0.4; // the scaling factor
     double[] currentTarget = null;
 
