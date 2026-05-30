@@ -184,9 +184,7 @@ public class Vehicle {
 
     public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
         // 1. Get the Q-learning choice for this vehicle's position
-		int action = target != null
-			? QEngine.chooseAction(this.pos[0], this.pos[1], target[0], target[1])
-			: QEngine.chooseAction(this.pos[0], this.pos[1]);
+		int action = QEngine.chooseAction(this.pos[0], this.pos[1]);
 
         // Convert choice to a direction vector
         double[] qForce = new double[2];

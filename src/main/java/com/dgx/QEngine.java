@@ -21,35 +21,21 @@ public class QEngine {
     public static int[][] visitCounts = new int[Q_WIDTH][Q_HEIGHT];
 
     public static int toGridX(double x) {
-        return toGridX(x, 0.0);
-    }
-
-    public static int toGridX(double x, double targetX) {
-        // Encode the vehicle position relative to the current target.
-        int gx = (int) Math.floor(((x - targetX) + HALF_WORLD_WIDTH) / CELL_SIZE);
+        int gx = (int) Math.floor((x + HALF_WORLD_WIDTH) / CELL_SIZE);
         return Math.max(0, Math.min(gx, Q_WIDTH-1));
     }
 
     public static int toGridY(double y) {
-        return toGridY(y, 0.0);
-    }
-
-    public static int toGridY(double y, double targetY) {
-        // Encode the vehicle position relative to the current target.
-        int gy = (int) Math.floor(((y - targetY) + HALF_WORLD_HEIGHT) / CELL_SIZE);
+        int gy = (int) Math.floor((y + HALF_WORLD_HEIGHT) / CELL_SIZE);
         return Math.max(0, Math.min(gy, Q_HEIGHT-1));
     }
 
     public static int chooseAction(double x, double y) {
-        return chooseAction(x, y, 0.0, 0.0);
-    }
-
-    public static int chooseAction(double x, double y, double targetX, double targetY) {
         if (rand.nextDouble() < EPSILON) {
             return rand.nextInt(ACTIONS);
         }
-        int gx = toGridX(x, targetX);
-        int gy = toGridY(y, targetY);
+        int gx = toGridX(x);
+        int gy = toGridY(y);
 
         double bestValue = -1e9;
         int bestAction = 0;
@@ -63,14 +49,10 @@ public class QEngine {
     }
 
     public static void updateQ(double oldX, double oldY, int action, double reward, double newX, double newY) {
-        updateQ(oldX, oldY, action, reward, newX, newY, 0.0, 0.0);
-    }
-
-    public static void updateQ(double oldX, double oldY, int action, double reward, double newX, double newY, double targetX, double targetY) {
-        int ox = toGridX(oldX, targetX);
-        int oy = toGridY(oldY, targetY);
-        int nx = toGridX(newX, targetX);
-        int ny = toGridY(newY, targetY);
+        int ox = toGridX(oldX);
+        int oy = toGridY(oldY);
+        int nx = toGridX(newX);
+        int ny = toGridY(newY);
 
         visitCounts[nx][ny]++;
         double explorationBonus = VISIT_BONUS / Math.sqrt(visitCounts[nx][ny]);
