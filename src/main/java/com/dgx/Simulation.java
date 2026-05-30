@@ -383,6 +383,9 @@ public class Simulation extends JFrame {
                 double oldY = v.pos[1];
 
                 // 2. Query the Q-Learning engine for high-level direction guidance
+                // int action = currentTarget != null
+                //     ? QEngine.chooseAction(oldX, oldY, currentTarget[0], currentTarget[1])
+                //     : QEngine.chooseAction(oldX, oldY);
                 int action = QEngine.chooseAction(oldX, oldY);
 
                 // 3. Execute vehicle kinematics movement update
