@@ -7,7 +7,7 @@ public class Obstacle {
 
     double[] position;
 
-    // constructor with obstacle positions, width and height
+    // constructor with obstacle positions, width, height and name
     Obstacle(double[] position, double obstacle_width, double obstacle_height, String obstacle_name) {
         this.position = position;
         this.obstacle_width = obstacle_width;
@@ -20,7 +20,7 @@ public class Obstacle {
         this.position = position;
         this.obstacle_width = 40;
         this.obstacle_height = 40;
-        this.obstacle_name = "";
+        this.obstacle_name = "Obstacle";
     }
 
     public double getObstacle_width() {

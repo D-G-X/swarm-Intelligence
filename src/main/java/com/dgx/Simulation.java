@@ -33,7 +33,7 @@ public class Simulation extends JFrame {
     static final int HEIGHT = 800;
     final int WORLD_MARGIN = 10;
     final int WORLD_BORDER_WIDTH = 2;
-    static int sleep = 8; // delay in frame
+    static int sleep = 2; // delay in frame
     static double pix = 0.4; // the scaling factor
     double[] currentTarget = null;
 
@@ -41,6 +41,7 @@ public class Simulation extends JFrame {
 
     ArrayList<Vehicle> allVehicles = new ArrayList<>(); // Array of vehicles
     ArrayList<Obstacle> allObstacles = new ArrayList<>(); // Array of Obstacles
+    ArrayList<BlackHole> allBlackHoles = new ArrayList<>(); // Array of Black Holes
 
     Simulation() {
         setTitle("Die Schwarmintelligenz");
@@ -100,6 +101,41 @@ public class Simulation extends JFrame {
 
         System.out.println("\nObstacles Generated");
 
+        // Extract Black Holes
+        System.out.println("Extracting Black Holes Positions");
+        try{
+            InputStream bhInput = getClass().getClassLoader().getResourceAsStream("blackholes.txt");
+            if (bhInput != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(bhInput));
+                int numBH = Integer.parseInt(reader.readLine());
+                System.out.println("Number of BlackHoles: "+numBH);
+                for (int i = 0; i < numBH; i++) {
+                    double[] bh_pos = new double[2];
+                    String line = reader.readLine();
+                    String[] parts = line.split(" ");
+                    double parsedX = Integer.parseInt(parts[0]);
+                    double parsedY = Integer.parseInt(parts[1]);
+                    double bh_radius = Double.parseDouble(parts[2]);
+                    String bh_name = parts.length > 3 ? parts[3] : "";
+
+                    double maxX = WIDTH;
+                    double maxY = HEIGHT;
+
+                    bh_pos[0] = Math.max(WORLD_MARGIN, Math.min(parsedX, maxX));
+                    bh_pos[1] = Math.max(WORLD_MARGIN, Math.min(parsedY, maxY));
+
+                    allBlackHoles.add(new BlackHole(bh_pos, bh_radius, bh_name));
+                }
+                reader.close();
+                System.out.println("Black Holes Position Extracted");
+            } else {
+                System.out.println("No text file for blackholes found!");
+            }
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         System.out.println("Generating Vehicles");
 
         for (int k = 0; k < anzFz; k++) {
@@ -111,7 +147,7 @@ public class Simulation extends JFrame {
 
         System.out.println("Vehicles Generated");
 
-        myCanvas = new Canvas(allVehicles, pix, allObstacles, WIDTH, HEIGHT);
+        myCanvas = new Canvas(allVehicles, pix, allObstacles, allBlackHoles, WIDTH, HEIGHT);
 
         myCanvas.setWorld_margin(WORLD_MARGIN);
         myCanvas.setWorld_border_thickness(WORLD_BORDER_WIDTH);
@@ -120,18 +156,32 @@ public class Simulation extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         add(myCanvas, BorderLayout.CENTER);
 
-        // Control panel with compact tiles arranged in 2 rows x 5 columns
-            JPanel controlPanel = new JPanel(new GridLayout(2, 5, 0, 4));
-            controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        // Control panel arranged as two clean rows
+        JPanel controlPanel = new JPanel(new GridLayout(2, 1, 0, 8));
         controlPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder("Control Panel"),
-            BorderFactory.createEmptyBorder(8, 0, 10, 0)));
+            BorderFactory.createEmptyBorder(8, 8, 10, 8)));
+
+        JPanel sliderRow = new JPanel(new GridLayout(1, 7, 6, 0));
+        JPanel toggleRow = new JPanel(new GridLayout(1, 5, 6, 0));
+
+        controlPanel.add(sliderRow);
+        controlPanel.add(toggleRow);
 
         java.util.function.BiFunction<JLabel, JSlider, JPanel> controlTile = (label, slider) -> {
             JPanel tile = new JPanel(new BorderLayout(4, 4));
             tile.add(label, BorderLayout.NORTH);
             tile.add(slider, BorderLayout.CENTER);
             return tile;
+        };
+
+        final JLabel lblSearchTime = new JLabel("Search time: 0.0 s");
+        final JLabel lblLastCapture = new JLabel("Last capture: --");
+        Runnable refreshTimerLabels = () -> {
+            lblSearchTime.setText(String.format("Search time: %.1f s", targetSearchElapsedMillis / 1000.0));
+            lblLastCapture.setText(lastCaptureMillis >= 0
+                ? String.format("Last capture: %.1f s", lastCaptureMillis / 1000.0)
+                : "Last capture: --");
         };
 
         // 1) Base avoidance radius slider (0 - 200)
@@ -145,33 +195,33 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblRadius, sliderRadius));
+        sliderRow.add(controlTile.apply(lblRadius, sliderRadius));
 
         // 2) Avoidance multiplier slider (0.0 - 10.0 mapped to 0 - 100)
-        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
-        JSlider sliderMult = new JSlider(0, 100, (int)Math.round(Vehicle.AVOIDANCE_MULTIPLIER * 10));
-        sliderMult.setMajorTickSpacing(25);
-        sliderMult.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                Vehicle.AVOIDANCE_MULTIPLIER = sliderMult.getValue() / 10.0;
-                lblMult.setText("AvoidMult: " + String.format("%.1f", Vehicle.AVOIDANCE_MULTIPLIER));
-                myCanvas.repaint();
-            }
-        });
-        controlPanel.add(controlTile.apply(lblMult, sliderMult));
+//        JLabel lblMult = new JLabel("AvoidMult: " + Vehicle.AVOIDANCE_MULTIPLIER);
+//        JSlider sliderMult = new JSlider(0, 100, (int)Math.round(Vehicle.AVOIDANCE_MULTIPLIER * 10));
+//        sliderMult.setMajorTickSpacing(25);
+//        sliderMult.addChangeListener(new ChangeListener() {
+//            public void stateChanged(ChangeEvent e) {
+//                Vehicle.AVOIDANCE_MULTIPLIER = sliderMult.getValue() / 10.0;
+//                lblMult.setText("AvoidMult: " + String.format("%.1f", Vehicle.AVOIDANCE_MULTIPLIER));
+//                myCanvas.repaint();
+//            }
+//        });
+//        controlPanel.add(controlTile.apply(lblMult, sliderMult));
 
         // 3) Obstacle weight slider (0.0 - 2.0 mapped to 0 - 200)
-        JLabel lblWeight = new JLabel("ObsWeight: " + Vehicle.OBS_WEIGHT);
+        JLabel lblWeight = new JLabel("F_OBS: " + Vehicle.OBS_WEIGHT);
         JSlider sliderWeight = new JSlider(0, 200, (int)Math.round(Vehicle.OBS_WEIGHT * 100));
         sliderWeight.setMajorTickSpacing(50);
         sliderWeight.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 Vehicle.OBS_WEIGHT = sliderWeight.getValue() / 100.0;
-                lblWeight.setText("ObsWeight: " + String.format("%.2f", Vehicle.OBS_WEIGHT));
+                lblWeight.setText("F_OBS: " + String.format("%.2f", Vehicle.OBS_WEIGHT));
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblWeight, sliderWeight));
+        sliderRow.add(controlTile.apply(lblWeight, sliderWeight));
 
         // 4) Cohesion weight slider (0.0 - 2.0 mapped to 0 - 200)
         JLabel lblZus = new JLabel("F_zus: " + String.format("%.2f", Vehicle.F_ZUS_WEIGHT));
@@ -184,7 +234,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblZus, sliderZus));
+        sliderRow.add(controlTile.apply(lblZus, sliderZus));
 
         // 5) Separation weight slider (0.0 - 2.0 mapped to 0 - 200)
         JLabel lblSep = new JLabel("F_sep: " + String.format("%.2f", Vehicle.F_SEP_WEIGHT));
@@ -197,7 +247,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblSep, sliderSep));
+        sliderRow.add(controlTile.apply(lblSep, sliderSep));
 
         // 6) Alignment weight slider (0.0 - 2.0 mapped to 0 - 200)
         JLabel lblAus = new JLabel("F_aus: " + String.format("%.2f", Vehicle.F_AUS_WEIGHT));
@@ -210,7 +260,7 @@ public class Simulation extends JFrame {
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblAus, sliderAus));
+        sliderRow.add(controlTile.apply(lblAus, sliderAus));
 
         // 7) Target detection radius slider (1 - 50)
         JLabel lblDetect = new JLabel("Target DetectRadius: " + String.format("%.1f", targetDetectionRadius));
@@ -219,11 +269,11 @@ public class Simulation extends JFrame {
         sliderDetect.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 targetDetectionRadius = sliderDetect.getValue();
-                lblDetect.setText("DetectRadius: " + String.format("%.1f", targetDetectionRadius));
+                lblDetect.setText("Target DetectRadius: " + String.format("%.1f", targetDetectionRadius));
                 myCanvas.repaint();
             }
         });
-        controlPanel.add(controlTile.apply(lblDetect, sliderDetect));
+        sliderRow.add(controlTile.apply(lblDetect, sliderDetect));
 
         // 8) Toggle obstacle avoidance radius visualization
         JCheckBox chkRadius = new JCheckBox("Show obstacle radius", false);
@@ -231,53 +281,83 @@ public class Simulation extends JFrame {
             myCanvas.setShowObstacleRadius(chkRadius.isSelected());
             myCanvas.repaint();
         });
-        JPanel toggleTile = new JPanel(new BorderLayout(4, 4));
-        toggleTile.add(new JLabel("Toggle Obstacle Radius"), BorderLayout.NORTH);
-        toggleTile.add(chkRadius, BorderLayout.CENTER);
-        controlPanel.add(toggleTile);
+        JCheckBox chkBlackHoleRadius = new JCheckBox("Show black hole radius", false);
+        chkBlackHoleRadius.addActionListener(e -> {
+            myCanvas.setShowBlackHoleRadius(chkBlackHoleRadius.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel toggleCell1 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell1.add(chkRadius);
+        toggleCell1.add(chkBlackHoleRadius);
+        toggleRow.add(toggleCell1);
 
-        // 9) Toggle target detection radius visualization + show type1 circles
+        // 9) Toggle Q-Table grid overlay + shade
+        JCheckBox chkGrid = new JCheckBox("Show Q-Grid", false);
+        chkGrid.addActionListener(e -> {
+            myCanvas.setShowGrid(chkGrid.isSelected());
+            myCanvas.repaint();
+        });
+        JCheckBox chkQShade = new JCheckBox("Q Shade", false);
+        chkQShade.addActionListener(e -> {
+            myCanvas.setShowQShade(chkQShade.isSelected());
+            myCanvas.repaint();
+        });
+        JPanel toggleCell2 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell2.add(chkGrid);
+        toggleCell2.add(chkQShade);
+        toggleRow.add(toggleCell2);
+
+        // 10) Toggle Q-values overlay + target radius
+        JCheckBox chkQVals = new JCheckBox("Show Q-Values", false);
+        chkQVals.addActionListener(e -> {
+            myCanvas.setShowQValues(chkQVals.isSelected());
+            myCanvas.repaint();
+        });
         JCheckBox chkTargetRadius = new JCheckBox("Show target radius", true);
         chkTargetRadius.addActionListener(e -> {
             myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
             myCanvas.repaint();
         });
+        JPanel toggleCell3 = new JPanel(new GridLayout(2, 1, 0, 4));
+        toggleCell3.add(chkQVals);
+        toggleCell3.add(chkTargetRadius);
+        toggleRow.add(toggleCell3);
 
+        // 11) Toggle type1 circle
         JCheckBox chkType1Circle = new JCheckBox("Show type1 circle", false);
         chkType1Circle.addActionListener(e -> {
             myCanvas.setShowType1Circle(chkType1Circle.isSelected());
             myCanvas.repaint();
         });
+        JPanel toggleCell4 = new JPanel(new GridLayout(1, 1, 0, 4));
+        toggleCell4.add(chkType1Circle);
+        toggleRow.add(toggleCell4);
 
-        JPanel combinedToggleCenter = new JPanel(new GridLayout(1, 2, 12, 4));
-        combinedToggleCenter.add(chkTargetRadius);
-        combinedToggleCenter.add(chkType1Circle);
+        JPanel timerTile = new JPanel(new GridLayout(2, 1, 0, 2));
+        timerTile.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        timerTile.add(lblSearchTime);
+        timerTile.add(lblLastCapture);
+        toggleRow.add(timerTile);
 
-        JPanel targetToggleTile = new JPanel(new BorderLayout(4, 4));
-        targetToggleTile.add(new JLabel("Toggle Target/Type1"), BorderLayout.NORTH);
-        targetToggleTile.add(combinedToggleCenter, BorderLayout.CENTER);
-        controlPanel.add(targetToggleTile);
-
-        // 10) Manual target regeneration button
+        // 12) Manual target regeneration button
         JButton btnNewTarget = new JButton("New Target");
         btnNewTarget.addActionListener(e -> {
             isDispersing = false;
             spawnNextTarget();
             myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
+            refreshTimerLabels.run();
             myCanvas.repaint();
         });
         JPanel buttonTile = new JPanel(new BorderLayout(4, 4));
         buttonTile.add(btnNewTarget, BorderLayout.CENTER);
-        controlPanel.add(buttonTile);
+        sliderRow.add(buttonTile);
 
         // initialize canvas toggles to match checkbox defaults
         myCanvas.setShowTargetDetectionRadius(chkTargetRadius.isSelected());
         myCanvas.setShowType1Circle(chkType1Circle.isSelected());
-
-        // Fill remaining cells so the grid keeps its shape as 2 rows x 5 columns.
-        while (controlPanel.getComponentCount() < 10) {
-            controlPanel.add(new JPanel());
-        }
+        myCanvas.setShowQShade(chkQShade.isSelected());
+        myCanvas.setShowTimer(true);
+        refreshTimerLabels.run();
 
         add(controlPanel, BorderLayout.SOUTH);
 
@@ -288,13 +368,85 @@ public class Simulation extends JFrame {
         spawnNextTarget();
 
         myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
+        refreshTimerLabels.run();
 
         new Timer(sleep, e -> {
             checkTargetStatus();
             myCanvas.updateTarget(currentTarget, isConsuming, targetDetectionRadius, targetSearchElapsedMillis, lastCaptureMillis);
+            refreshTimerLabels.run();
 
+            // Dynamic Swarm Simulation Loop coupled with Q-Learning Brain Updates
             for (Vehicle v : allVehicles) {
+
+                // 1. Capture original continuous state position coordinates
+                double oldX = v.pos[0];
+                double oldY = v.pos[1];
+
+                // 2. Query the Q-Learning engine for high-level direction guidance
+                int action = QEngine.chooseAction(oldX, oldY);
+
+                // 3. Execute vehicle kinematics movement update
                 v.move(allVehicles, allObstacles, currentTarget, isConsuming, isDispersing);
+
+                // 4. Evaluate Environment Intersections & Distribute Rewards/Punishments
+                double reward = -1.0; // Baseline execution step penalty cost
+                boolean terminalStateReached = false;
+                boolean hitBlackHole = false;
+
+                // Check Black Hole Collision Intersections
+                for (BlackHole bh : allBlackHoles) {
+                    double dx = v.pos[0] - bh.position[0];
+                    double dy = v.pos[1] - bh.position[1];
+                    double distSq = (dx * dx) + (dy * dy);
+                    double killRadius = bh.getHole_radius();
+
+                    if (distSq <= (killRadius * killRadius)) {
+                        reward = -100.0; // Heavy penalty for dying
+                        hitBlackHole = true;
+                        terminalStateReached = true;
+                        break;
+                    }
+                }
+
+                // Check Obstacle Intersections
+                if (!terminalStateReached) {
+                    for (Obstacle obs : allObstacles) {
+                        double ox = obs.position[0];
+                        double oy = obs.position[1];
+                        double ow = obs.getObstacle_width();
+                        double oh = obs.getObstacle_height();
+
+                        if (v.pos[0] >= ox && v.pos[0] <= ox + ow &&
+                                v.pos[1] >= oy && v.pos[1] <= oy + oh) {
+                            reward = -10.0; // Penalty for touching an obstacle
+                            v.pos[0] = oldX;
+                            v.pos[1] = oldY;
+                            v.vel[0] = -v.vel[0] * 0.8;
+                            v.vel[1] = -v.vel[1] * 0.8;
+                            break;
+                        }
+                    }
+                }
+
+                // Check Target Acquisition Intersection (If not already consumed)
+                if (!terminalStateReached && currentTarget != null && !isConsuming) {
+                    double dx = v.pos[0] - currentTarget[0];
+                    double dy = v.pos[1] - currentTarget[1];
+                    double dist = Math.sqrt((dx * dx) + (dy * dy));
+
+                    if (dist < targetDetectionRadius) {
+                        reward = 100.0; // Large positive reward for target capture
+                        terminalStateReached = true;
+                    }
+                }
+
+                // 5. Update the crowdsourced collective swarm intelligence Q-Table
+                QEngine.updateQ(oldX, oldY, action, reward, v.pos[0], v.pos[1]);
+
+                // 6. Handle Respawn Operations
+                if (hitBlackHole) {
+                    placeVehicleInSpawnCircle(v); // Reset position coordinates seamlessly
+                }
             }
 
             repaint();
@@ -341,6 +493,14 @@ public class Simulation extends JFrame {
                 }
             }
 
+            // 3. Keep the target out of black hole gravity zones plus a 20 unit safety buffer
+            for (BlackHole bh : allBlackHoles) {
+                if (isInsideBlackHoleBuffer(currentTarget, bh, 20.0)) {
+                    invalidLocation = true;
+                    break;
+                }
+            }
+
             if (attempts > 100) break;
 
         } while (invalidLocation);
@@ -348,6 +508,13 @@ public class Simulation extends JFrame {
         System.out.println("New Target Position:\t"+currentTarget[0]+","+currentTarget[1]);
 
         isConsuming = false;
+    }
+
+    private boolean isInsideBlackHoleBuffer(double[] target, BlackHole blackHole, double extraBuffer) {
+        double dx = target[0] - blackHole.position[0];
+        double dy = target[1] - blackHole.position[1];
+        double radius = blackHole.getHole_radius() + extraBuffer;
+        return (dx * dx) + (dy * dy) <= radius * radius;
     }
 
     private void placeVehicleInSpawnCircle(Vehicle car) {

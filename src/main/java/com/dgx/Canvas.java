@@ -12,11 +12,16 @@ public class Canvas extends JPanel {
     ArrayList<Vehicle> allVehicles;
     double pix;
     ArrayList<Obstacle> allObstacles;
+    ArrayList<BlackHole> allBlackHoles;
 
     // New fields to track the target state
     double[] currentTarget;
     boolean isConsuming;
     boolean showObstacleRadius;
+    boolean showGrid;
+    boolean showQValues;
+    boolean showQShade;
+    boolean showBlackHoleRadius;
     boolean showTargetDetectionRadius;
     double targetDetectionRadius;
     boolean showType1Circle;
@@ -29,10 +34,11 @@ public class Canvas extends JPanel {
 
     double[] canvas_dimensions = new double[2];
 
-    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, int width, int height) {
+    Canvas(ArrayList<Vehicle> allVehicles, double pix, ArrayList<Obstacle> obstacles, ArrayList<BlackHole> blackHoles, int width, int height) {
         this.allVehicles = allVehicles;
         this.pix = pix;
         this.allObstacles = obstacles;
+        this.allBlackHoles = blackHoles;
         this.setBackground(Color.lightGray);
         this.canvas_dimensions[0] = width;
         this.canvas_dimensions[1] = height;
@@ -52,8 +58,24 @@ public class Canvas extends JPanel {
         this.showObstacleRadius = showObstacleRadius;
     }
 
+    public void setShowBlackHoleRadius(boolean showBlackHoleRadius) {
+        this.showBlackHoleRadius = showBlackHoleRadius;
+    }
+
     public void setShowTargetDetectionRadius(boolean showTargetDetectionRadius) {
         this.showTargetDetectionRadius = showTargetDetectionRadius;
+    }
+
+    public void setShowGrid(boolean showGrid) {
+        this.showGrid = showGrid;
+    }
+
+    public void setShowQValues(boolean showQValues) {
+        this.showQValues = showQValues;
+    }
+
+    public void setShowQShade(boolean showQShade) {
+        this.showQShade = showQShade;
     }
 
     public void setShowType1Circle(boolean showType1Circle) {
@@ -161,28 +183,6 @@ public class Canvas extends JPanel {
             (float)(spawnCenterPxY + labelAscent + lineGap)
         );
 
-        if (showTimer) {
-            spawnGraphics.setFont(spawnGraphics.getFont().deriveFont(java.awt.Font.BOLD, 13.0f));
-            java.awt.FontMetrics timerMetrics = spawnGraphics.getFontMetrics();
-            String searchText = String.format("Search time: %.1f s", targetSearchElapsedMillis / 1000.0);
-            String captureText = lastCaptureMillis >= 0
-                ? String.format("Last capture: %.1f s", lastCaptureMillis / 1000.0)
-                : "Last capture: --";
-            int searchTextWidth = timerMetrics.stringWidth(searchText);
-            int captureTextWidth = timerMetrics.stringWidth(captureText);
-            int timerWidth = Math.max(searchTextWidth, captureTextWidth) + 18;
-            int timerHeight = timerMetrics.getHeight() * 2 + 10;
-            int timerX = (int)(spawnCenterPxX - timerWidth / 2.0);
-            int timerY = (int)(spawnCenterPxY + spawnRadiusPx + 8.0);
-
-            spawnGraphics.setColor(new Color(255, 255, 255, 210));
-            spawnGraphics.fillRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
-            spawnGraphics.setColor(new Color(70, 70, 70));
-            spawnGraphics.drawRoundRect(timerX, timerY, timerWidth, timerHeight, 16, 16);
-            spawnGraphics.setColor(Color.BLACK);
-            spawnGraphics.drawString(searchText, timerX + 9, timerY + timerMetrics.getAscent() + 2);
-            spawnGraphics.drawString(captureText, timerX + 9, timerY + timerMetrics.getAscent() + timerMetrics.getHeight() + 2);
-        }
         spawnGraphics.dispose();
 
         // 2. Paint spawnability overlay (green = allowed, red = blocked)
@@ -213,6 +213,8 @@ public class Canvas extends JPanel {
             }
         }
         overlay.dispose();
+
+        
 
         // 3. Paint Target
         if (currentTarget != null) {
@@ -328,6 +330,162 @@ public class Canvas extends JPanel {
                 ));
                 radiusGraphics.dispose();
             }
+        }
+
+        // 5. Paint Black Holes
+        if (allBlackHoles != null) {
+            for (BlackHole bh : allBlackHoles) {
+                double cx = bh.position[0] / pix;
+                double cy = bh.position[1] / pix;
+                double r = bh.getHole_radius() / pix;
+
+                Graphics2D bhG = (Graphics2D) g2d.create();
+                java.awt.geom.Ellipse2D holeShape = new java.awt.geom.Ellipse2D.Double(cx - r, cy - r, r * 2.0, r * 2.0);
+                bhG.setPaint(new java.awt.RadialGradientPaint(
+                        new java.awt.geom.Point2D.Double(cx, cy),
+                        (float) r,
+                    new float[]{0.0f, 0.45f, 1.0f},
+                    new Color[]{Color.BLACK, new Color(55, 55, 55), new Color(130, 130, 130)}
+                ));
+                bhG.fill(holeShape);
+
+                bhG.setColor(new Color(170, 170, 170, 180));
+                bhG.draw(holeShape);
+
+                if (showBlackHoleRadius) {
+                    double radiusWorld = bh.getHole_radius() + 20.0;
+                    double radiusPx = radiusWorld / pix;
+                    double diameterPx = radiusPx * 2.0;
+
+                    Graphics2D radiusGraphics = (Graphics2D) bhG.create();
+                    float[] dashPattern = {8.0f, 8.0f};
+                    radiusGraphics.setColor(new Color(0, 0, 0, 180));
+                    radiusGraphics.setStroke(new java.awt.BasicStroke(
+                        1.5f,
+                        java.awt.BasicStroke.CAP_BUTT,
+                        java.awt.BasicStroke.JOIN_MITER,
+                        10.0f,
+                        dashPattern,
+                        0.0f
+                    ));
+                    radiusGraphics.draw(new java.awt.geom.Ellipse2D.Double(
+                        cx - radiusPx,
+                        cy - radiusPx,
+                        diameterPx,
+                        diameterPx
+                    ));
+                    radiusGraphics.dispose();
+                }
+
+                // Draw name centered inside the black hole (reduced size)
+                String name = bh.getHole_name();
+                if (name != null && !name.isBlank()) {
+                    float fontSize = Math.max(8f, (float)(r * 0.25));
+                    bhG.setFont(bhG.getFont().deriveFont(java.awt.Font.BOLD, fontSize));
+                    java.awt.FontMetrics fm = bhG.getFontMetrics();
+                    int w = fm.stringWidth(name);
+                    bhG.setColor(Color.WHITE);
+                    float textX = (float)(cx - w / 2.0);
+                    float textY = (float)(cy + (fm.getAscent() - fm.getDescent()) / 2.0);
+                    bhG.drawString(name, textX, textY);
+                }
+
+                bhG.dispose();
+            }
+        }
+
+        if (showQShade) {
+            double minQ = Double.POSITIVE_INFINITY;
+            double maxQ = Double.NEGATIVE_INFINITY;
+            for (int gx = 0; gx < QEngine.Q.length; gx++) {
+                for (int gy = 0; gy < QEngine.Q[0].length; gy++) {
+                    double cellBest = Double.NEGATIVE_INFINITY;
+                    for (int a = 0; a < QEngine.Q[0][0].length; a++) {
+                        cellBest = Math.max(cellBest, QEngine.Q[gx][gy][a]);
+                    }
+                    minQ = Math.min(minQ, cellBest);
+                    maxQ = Math.max(maxQ, cellBest);
+                }
+            }
+
+            double range = maxQ - minQ;
+            if (range > 1e-9) {
+                Graphics2D shadeG = (Graphics2D) g2d.create();
+                int cellPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+                if (cellPx >= 4) {
+                    for (int gx = 0; gx < QEngine.Q.length; gx++) {
+                        for (int gy = 0; gy < QEngine.Q[0].length; gy++) {
+                            double cellBest = Double.NEGATIVE_INFINITY;
+                            for (int a = 0; a < QEngine.Q[0][0].length; a++) {
+                                cellBest = Math.max(cellBest, QEngine.Q[gx][gy][a]);
+                            }
+
+                            double normalized = (cellBest - minQ) / range;
+                            normalized = Math.max(0.0, Math.min(1.0, normalized));
+
+                            int red = (int) Math.round(255 * (1.0 - normalized));
+                            int green = (int) Math.round(255 * normalized);
+                            int alpha = 28 + (int) Math.round(24 * normalized);
+
+                            shadeG.setColor(new Color(red, green, 80, alpha));
+                            int x = (int) Math.round((gx * QEngine.CELL_SIZE) / pix);
+                            int y = (int) Math.round((gy * QEngine.CELL_SIZE) / pix);
+                            int w = Math.min(cellPx, getWidth() - x);
+                            int h = Math.min(cellPx, getHeight() - y);
+                            if (w > 0 && h > 0) {
+                                shadeG.fillRect(x, y, w, h);
+                            }
+                        }
+                    }
+                }
+                shadeG.dispose();
+            }
+        }
+
+        // 6. Top-layer overlays: grid and Q-values (drawn after obstacles & black holes)
+        if (showGrid) {
+            Graphics2D gridG = (Graphics2D) g2d.create();
+            gridG.setColor(new java.awt.Color(0, 0, 0, 120));
+            int gridStepPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+            int w = getWidth();
+            int h = getHeight();
+            for (int gx = 0; gx < w; gx += gridStepPx) {
+                gridG.drawLine(gx, 0, gx, h);
+            }
+            for (int gy = 0; gy < h; gy += gridStepPx) {
+                gridG.drawLine(0, gy, w, gy);
+            }
+            gridG.dispose();
+        }
+
+        if (showQValues) {
+            Graphics2D qg = (Graphics2D) g2d.create();
+            qg.setColor(new java.awt.Color(0, 0, 0, 200));
+            int cellPx = Math.max(1, (int)Math.round(QEngine.CELL_SIZE / pix));
+            if (cellPx >= 8) { // only render when readable
+                java.awt.Font f = qg.getFont().deriveFont(9.0f);
+                qg.setFont(f);
+                for (int gx = 0; gx < QEngine.Q.length; gx++) {
+                    for (int gy = 0; gy < QEngine.Q[0].length; gy++) {
+                        double maxQ = Double.NEGATIVE_INFINITY;
+                        for (int a = 0; a < QEngine.Q[0][0].length; a++) {
+                            maxQ = Math.max(maxQ, QEngine.Q[gx][gy][a]);
+                        }
+                        int cx = (int)((gx * QEngine.CELL_SIZE + QEngine.CELL_SIZE/2.0) / pix);
+                        int cy = (int)((gy * QEngine.CELL_SIZE + QEngine.CELL_SIZE/2.0) / pix);
+                        String s = String.format("%.1f", maxQ);
+                        java.awt.FontMetrics fm = qg.getFontMetrics();
+                        int sw = fm.stringWidth(s);
+                        int sh = fm.getAscent();
+                        // background for readability
+                        qg.setColor(new java.awt.Color(255, 255, 255, 200));
+                        qg.fillRect(cx - sw/2 - 2, cy - sh + 1, sw + 4, sh + 2);
+                        qg.setColor(new java.awt.Color(0, 0, 0, 220));
+                        qg.drawString(s, cx - sw/2, cy + 1);
+                    }
+                }
+            }
+            qg.dispose();
         }
     }
 
